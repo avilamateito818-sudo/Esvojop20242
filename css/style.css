@@ -493,7 +493,6 @@ section { padding: 5rem 3rem; position: relative; }
   color: #fff;
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke: 2px rgba(255, 255, 255, 0.95);
-  text-stroke: 2px rgba(255, 255, 255, 0.95);
   filter: drop-shadow(0 4px 30px rgba(0,0,0,0.7)) drop-shadow(0 0 50px rgba(0, 0, 0, 0.4));
 }
 
