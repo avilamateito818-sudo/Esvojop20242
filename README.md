@@ -57,3 +57,4 @@ Consulta [`docs/MANUAL_ADMINISTRADOR_SIN_ERRORES.md`](docs/MANUAL_ADMINISTRADOR_
 ---
 
 © 2026 ESVOJOP · Club de Voleibol. Formación deportiva de alto nivel.
+
