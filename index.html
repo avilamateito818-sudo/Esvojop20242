@@ -56,6 +56,7 @@
   <!-- Hero Section Élite -->
   <section class="hero" id="inicio" style="background:linear-gradient(180deg, rgba(6,13,26,0.7) 0%, rgba(6,13,26,0.95) 100%), url('img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.24%20PM%20(1).jpeg') center/cover no-repeat;">
     <div class="hero-bg"></div>
+    <div class="hero-spotlight"></div>
     <div class="court-lines"></div>
     <div class="club-header reveal">
       <img src="img/fotos/logo/Captura%20de%20pantalla%202026-04-20%20130524.png" alt="ESVOJOP Club de Voleibol" class="club-logo">
@@ -70,7 +71,7 @@
       </h1>
       <p class="reveal">Formamos atletas íntegros con disciplina, excelencia técnica y mentalidad ganadora desde los 6 años. Programa deportivo estructurado en el Polideportivo IRDET con entrenadores especializados.</p>
       <div class="hero-actions reveal">
-        <a href="#clase-gratis" class="btn btn-secondary">⚡ Agendar Clase de Cortesía</a>
+        <a href="#clase-gratis" class="btn btn-secondary btn-shine">⚡ Agendar Clase de Cortesía</a>
         <a href="#categorias" class="btn btn-outline">Ver Categorías</a>
       </div>
     </div>
@@ -78,13 +79,13 @@
 
   <!-- Barra de Métricas de Confianza (Stats Strip) -->
   <div class="stats-strip">
-    <div class="stats-grid reveal">
+    <div class="stats-grid reveal-scale">
       <div class="stat-box">
-        <div class="stat-number">+10</div>
+        <div class="stat-number" data-count="10" data-prefix="+">+10</div>
         <div class="stat-label">Años de Trayectoria</div>
       </div>
       <div class="stat-box">
-        <div class="stat-number">3</div>
+        <div class="stat-number" data-count="3">3</div>
         <div class="stat-label">Niveles Formativos</div>
       </div>
       <div class="stat-box">
@@ -92,7 +93,7 @@
         <div class="stat-label">Sede Oficial Tunja</div>
       </div>
       <div class="stat-box">
-        <div class="stat-number">100%</div>
+        <div class="stat-number" data-count="100" data-suffix="%">100%</div>
         <div class="stat-label">Enfoque en Valores</div>
       </div>
     </div>
@@ -101,7 +102,7 @@
   <!-- Gancho Estrella: Clase de Cortesía Gratuita (Estilo Club Voley Master) -->
   <section class="trial-section" id="clase-gratis">
     <div class="container">
-      <div class="trial-card reveal">
+      <div class="trial-card reveal-scale">
         <div class="trial-box-left">
           <span class="trial-badge">Sin Compromiso · Primera Sesión</span>
           <h2 class="trial-title">Ven y entrena con nosotros en tu <span>Clase de Cortesía</span></h2>
@@ -115,7 +116,7 @@
             <li><span>✓</span> <strong>100% Gratuito:</strong> Ven con ropa deportiva e hidratación.</li>
           </ul>
           <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-            <a href="https://wa.me/573103434293?text=Hola%20Profesor%20Jorge%2C%20quiero%20agendar%20mi%20Clase%20de%20Cortes%C3%ADa%20Gratuita%20en%20ESVOJOP" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">💬 Agendar por WhatsApp</a>
+            <a href="https://wa.me/573103434293?text=Hola%20Profesor%20Jorge%2C%20quiero%20agendar%20mi%20Clase%20de%20Cortes%C3%ADa%20Gratuita%20en%20ESVOJOP" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-shine">💬 Agendar por WhatsApp</a>
             <a href="#contacto" class="btn btn-outline">Llenar Formulario</a>
           </div>
         </div>
@@ -139,11 +140,13 @@
       <h2 class="section-title reveal">Nuestras <span>Categorías</span></h2>
       <p class="levels-desc reveal">Diseñamos procesos de entrenamiento acordes a la etapa biológica y deportiva de cada atleta.</p>
 
-      <div class="cat-grid-modern">
+      <div class="cat-grid-modern reveal-stagger">
         <!-- Semillero / Iniciación -->
-        <div class="cat-box reveal">
+        <div class="cat-box reveal-scale">
           <span class="cat-box-badge">Semillero</span>
-          <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.25%20PM%20(3).jpeg" alt="Iniciación Voleibol ESVOJOP" class="cat-box-img">
+          <div class="cat-box-img-wrap">
+            <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.25%20PM%20(3).jpeg" alt="Iniciación Voleibol ESVOJOP" class="cat-box-img" loading="lazy">
+          </div>
           <div class="cat-box-body">
             <div class="cat-box-age">6 a 11 Años</div>
             <h3>Iniciación Deportiva</h3>
@@ -158,9 +161,11 @@
         </div>
 
         <!-- Desarrollo y Menores -->
-        <div class="cat-box reveal">
+        <div class="cat-box reveal-scale">
           <span class="cat-box-badge" style="background:#0055ff;color:#fff;">Desarrollo</span>
-          <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.24%20PM.jpeg" alt="Desarrollo Voleibol ESVOJOP" class="cat-box-img">
+          <div class="cat-box-img-wrap">
+            <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.24%20PM.jpeg" alt="Desarrollo Voleibol ESVOJOP" class="cat-box-img" loading="lazy">
+          </div>
           <div class="cat-box-body">
             <div class="cat-box-age">12 a 16 Años</div>
             <h3>Desarrollo Juvenil</h3>
@@ -175,9 +180,11 @@
         </div>
 
         <!-- Competitivo y Mayores -->
-        <div class="cat-box reveal">
+        <div class="cat-box reveal-scale">
           <span class="cat-box-badge">Alto Rendimiento</span>
-          <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.26%20PM%20(2).jpeg" alt="Competitivo Voleibol ESVOJOP" class="cat-box-img">
+          <div class="cat-box-img-wrap">
+            <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.26%20PM%20(2).jpeg" alt="Competitivo Voleibol ESVOJOP" class="cat-box-img" loading="lazy">
+          </div>
           <div class="cat-box-body">
             <div class="cat-box-age">17+ Años / Selección</div>
             <h3>Perfeccionamiento</h3>
@@ -200,33 +207,33 @@
       <div class="section-label reveal">Nuestro Método</div>
       <h2 class="section-title reveal">Formación con <span>Metodología de Vanguardia</span></h2>
       <p class="levels-desc reveal">Combinamos pedagogía deportiva, preparación física integral y ciencia del entrenamiento.</p>
-      <div class="met-grid">
-        <div class="met-item reveal">
+      <div class="met-grid reveal-stagger">
+        <div class="met-item reveal-scale">
           <div class="met-icon">📋</div>
           <h4>Evaluación diagnóstica</h4>
           <p>Medición inicial de salto vertical, alcance, coordinación y velocidad para diseñar la progresión del deportista.</p>
         </div>
-        <div class="met-item reveal">
+        <div class="met-item reveal-scale">
           <div class="met-icon">📅</div>
           <h4>Planificación periodizada</h4>
           <p>Ciclos estructurados de entrenamiento para maximizar el rendimiento competitivo y prevenir lesiones.</p>
         </div>
-        <div class="met-item reveal">
+        <div class="met-item reveal-scale">
           <div class="met-icon">🎥</div>
           <h4>Análisis de video y táctica</h4>
           <p>Revisión técnica de gestos de remate, recepción y bloqueo con retroalimentación visual directa.</p>
         </div>
-        <div class="met-item reveal">
+        <div class="met-item reveal-scale">
           <div class="met-icon">💪</div>
           <h4>Preparación física funcional</h4>
           <p>Potencia de tren inferior, agilidad lateral y resistencia cardiovascular orientadas al voleibol moderno.</p>
         </div>
-        <div class="met-item reveal">
+        <div class="met-item reveal-scale">
           <div class="met-icon">🧠</div>
           <h4>Fortaleza mental</h4>
           <p>Control de presión en momentos decisivos, concentración en el saque y liderazgo en la red.</p>
         </div>
-        <div class="met-item reveal">
+        <div class="met-item reveal-scale">
           <div class="met-icon">⭐</div>
           <h4>Educación en valores</h4>
           <p>Disciplina, puntualidad, humildad en la victoria y resiliencia en la derrota como normas de vida.</p>
@@ -243,8 +250,14 @@
       <p class="levels-desc reveal">Nuestra sede oficial cuenta con todas las garantías de seguridad y calidad deportiva en Tunja.</p>
 
       <div class="venue-strip reveal">
-        <div>
-          <div class="hero-tag" style="margin-bottom:0.8rem;"><span class="txt">Sede Deportiva Principal</span></div>
+        <div class="reveal-left">
+          <div class="live-status-beacon">
+            <span class="beacon-dot-wrap">
+              <span class="beacon-pulse"></span>
+              <span class="beacon-dot"></span>
+            </span>
+            <span>Instalación Activa · Sede Oficial</span>
+          </div>
           <h3 style="font-family:var(--font-display);font-size:2.2rem;color:var(--white);margin-bottom:0.5rem;">Polideportivo IRDET</h3>
           <p style="color:var(--gray-light);font-size:0.95rem;line-height:1.7;">
             El Instituto de Recreación y Deporte de Tunja (IRDET) ofrece instalaciones óptimas para el voleibol de alto nivel, con piso reglamentario, iluminación profesional y graderías.
@@ -281,7 +294,7 @@
           </div>
         </div>
 
-        <div style="background:rgba(6,13,26,0.8);border:1px solid rgba(255,215,0,0.25);border-radius:6px;padding:2rem;text-align:center;">
+        <div class="reveal-right" style="background:rgba(6,13,26,0.8);border:1px solid rgba(255,215,0,0.25);border-radius:6px;padding:2rem;text-align:center;">
           <h4 style="font-family:var(--font-display);font-size:1.8rem;color:var(--yellow);margin-bottom:1rem;">Horarios de Entrenamiento</h4>
           <div style="border-bottom:1px solid rgba(255,215,0,0.1);padding-bottom:1rem;margin-bottom:1rem;">
             <div style="font-weight:700;color:var(--white);font-size:1.1rem;">Martes</div>
@@ -306,11 +319,11 @@
       <h2 class="section-title reveal">Equípate como un <span>Profesional</span></h2>
       <p class="levels-desc reveal">Uniformes confeccionados en telas inteligentes que ofrecen transpirabilidad y máxima elasticidad.</p>
 
-      <div class="grid-3 reveal" style="margin-top:2.5rem;">
-        <div class="card product-card">
+      <div class="grid-3 reveal-stagger" style="margin-top:2.5rem;">
+        <div class="card product-card reveal-scale">
           <div class="img-wrap">
-            <span>👕</span>
-            <span class="badge">Oficial</span>
+            <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-20%20at%204.32.25%20PM.jpeg" alt="Uniforme Completo ESVOJOP" loading="lazy">
+            <span class="badge">Oficial ESVOJOP</span>
           </div>
           <div class="info">
             <h4>Uniforme Completo ESVOJOP</h4>
@@ -320,10 +333,10 @@
           </div>
         </div>
 
-        <div class="card product-card">
+        <div class="card product-card reveal-scale">
           <div class="img-wrap">
-            <span>🏐</span>
-            <span class="badge">FIVB</span>
+            <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.26%20PM.jpeg" alt="Balón Oficial Profesional" loading="lazy">
+            <span class="badge">Certificado FIVB</span>
           </div>
           <div class="info">
             <h4>Balón Oficial Profesional</h4>
@@ -333,9 +346,9 @@
           </div>
         </div>
 
-        <div class="card product-card">
+        <div class="card product-card reveal-scale">
           <div class="img-wrap">
-            <span>🦵</span>
+            <img src="img/rodillera.svg" alt="Rodilleras Pro Shield Gel" class="svg-illustration" loading="lazy">
             <span class="badge">Protección</span>
           </div>
           <div class="info">
@@ -358,7 +371,7 @@
     <div class="container">
       <div class="section-label reveal">Liderazgo Deportivo</div>
       <h2 class="section-title reveal">Dirección <span>Técnica</span></h2>
-      <div class="coach-card reveal">
+      <div class="coach-card reveal-scale">
         <div class="coach-photo" style="background-image:url('img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.26%20PM.jpeg');"></div>
         <div class="coach-info">
           <div class="coach-role">Director Deportivo & Entrenador Principal</div>
@@ -379,7 +392,7 @@
   <section id="contacto">
     <div class="container">
       <div class="contact-grid">
-        <div class="reveal">
+        <div class="reveal-left">
           <div class="section-label">Paso 1</div>
           <h2 class="section-title" style="text-align:left;">Inscríbete o <span>Prueba Gratis</span></h2>
           <p style="font-size:0.95rem;color:var(--gray);margin-bottom:1.5rem;">Completa el formulario y nos comunicaremos contigo de inmediato para coordinar tu ingreso.</p>
@@ -419,11 +432,11 @@
               <label for="mensaje">Comentarios o preguntas adicionales</label>
               <textarea name="message" id="mensaje" class="form-control" placeholder="Indícanos si tienes experiencia previa en voleibol o alguna consulta especial..." rows="5"></textarea>
             </div>
-            <button type="submit" class="btn btn-lg btn-secondary btn-block">Enviar Solicitud</button>
+            <button type="submit" class="btn btn-lg btn-secondary btn-block btn-shine">Enviar Solicitud</button>
           </form>
         </div>
 
-        <div class="contact-info reveal">
+        <div class="contact-info reveal-right">
           <div class="contact-card">
             <span class="icon">📍</span>
             <h4>Lugar de Entrenamiento</h4>

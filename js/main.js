@@ -67,23 +67,95 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  /* ── Animación Scroll Reveal con IntersectionObserver ── */
+  /* ── Header Sticky Dynamic Elevation on Scroll ── */
+  const siteHeader = document.querySelector('.site-header');
+  if (siteHeader) {
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (window.scrollY > 30) {
+            siteHeader.classList.add('scrolled');
+          } else {
+            siteHeader.classList.remove('scrolled');
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+  }
+
+  /* ── Interactive Hero Court Scanner (Mousemove Lighting Mesh) ── */
+  const heroSection = document.querySelector('.hero');
+  if (heroSection && window.matchMedia('(pointer: fine)').matches) {
+    let heroTicking = false;
+    heroSection.addEventListener('mousemove', (e) => {
+      if (!heroTicking) {
+        requestAnimationFrame(() => {
+          const rect = heroSection.getBoundingClientRect();
+          const x = ((e.clientX - rect.left) / rect.width) * 100;
+          const y = ((e.clientY - rect.top) / rect.height) * 100;
+          heroSection.style.setProperty('--scan-x', `${x.toFixed(1)}%`);
+          heroSection.style.setProperty('--scan-y', `${y.toFixed(1)}%`);
+          heroTicking = false;
+        });
+        heroTicking = true;
+      }
+    });
+  }
+
+  /* ── Animación Numérica Dinámica (Count-Up) ── */
+  function animateCounters() {
+    const counters = document.querySelectorAll('[data-count]:not(.counted)');
+    counters.forEach((counter) => {
+      counter.classList.add('counted');
+      const target = parseFloat(counter.getAttribute('data-count')) || 0;
+      const prefix = counter.getAttribute('data-prefix') || '';
+      const suffix = counter.getAttribute('data-suffix') || '';
+      const duration = 1600; // ms
+      const startTime = performance.now();
+
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Easing: easeOutCubic
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        const currentVal = Math.floor(easeProgress * target);
+        counter.textContent = `${prefix}${currentVal}${suffix}`;
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          counter.textContent = `${prefix}${target}${suffix}`;
+        }
+      }
+      requestAnimationFrame(update);
+    });
+  }
+
+  /* ── Animación Scroll Reveal con IntersectionObserver (Múltiples Variantes) ── */
+  const revealSelectors = '.reveal, .reveal-left, .reveal-right, .reveal-scale, .reveal-blur, .reveal-stagger';
   if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('visible');
+            // Si el elemento contiene contadores o es un contenedor de estadísticas
+            if (entry.target.hasAttribute('data-count') || entry.target.querySelector('[data-count]')) {
+              animateCounters();
+            }
             observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.12 }
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
     );
-    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+    document.querySelectorAll(revealSelectors).forEach((el) => observer.observe(el));
   } else {
     // Fallback para navegadores antiguos
-    document.querySelectorAll('.reveal').forEach((el) => el.classList.add('visible'));
+    document.querySelectorAll(revealSelectors).forEach((el) => el.classList.add('visible'));
+    animateCounters();
   }
 
   /* ── Filtros del Catálogo Oficial ── */
