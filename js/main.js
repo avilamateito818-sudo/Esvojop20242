@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════
-   VOLEIBOL · PASIÓN EN LA RED
-   Shared JavaScript
+   ESVOJOP · CLUB DE VOLEIBOL
+   Shared JavaScript & Interactions
    ═══════════════════════════════════════════ */
 
-/* ── Toast System (global) ── */
+/* ── Toast Notification System (Global) ── */
 function showToast(message) {
   let toast = document.querySelector('.toast');
   if (!toast) {
@@ -14,55 +14,79 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add('show');
   clearTimeout(toast._hide);
-  toast._hide = setTimeout(() => toast.classList.remove('show'), 3000);
+  toast._hide = setTimeout(() => toast.classList.remove('show'), 3500);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  /* ── Cursor Glow ── */
+  /* ── Cursor Glow con requestAnimationFrame (Optimizado) ── */
   const cursor = document.getElementById('cursor');
   if (cursor) {
+    let mouseX = 0, mouseY = 0;
+    let isMoving = false;
+
     document.addEventListener('mousemove', (e) => {
-      cursor.style.left = e.clientX + 'px';
-      cursor.style.top = e.clientY + 'px';
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      if (!isMoving) {
+        requestAnimationFrame(() => {
+          cursor.style.left = mouseX + 'px';
+          cursor.style.top = mouseY + 'px';
+          isMoving = false;
+        });
+        isMoving = true;
+      }
     });
   }
 
-  /* ── Hamburger Menu ── */
+  /* ── Menú Móvil Hamburger ── */
   const hamburger = document.querySelector('.hamburger');
   const navLinks = document.querySelector('.nav-links');
   if (hamburger && navLinks) {
     hamburger.addEventListener('click', () => {
-      hamburger.classList.toggle('open');
+      const isOpen = hamburger.classList.toggle('open');
       navLinks.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     });
+
     document.querySelectorAll('.nav-links a').forEach((link) => {
       link.addEventListener('click', () => {
         hamburger.classList.remove('open');
         navLinks.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
       });
     });
   }
 
-  /* ── Active Nav Link ── */
+  /* ── Resaltar Enlace Activo en Navegación ── */
   const currentPage = window.location.pathname.split('/').pop() || 'index.html';
   document.querySelectorAll('.nav-links a').forEach((link) => {
     const href = link.getAttribute('href');
-    if (href === currentPage) link.classList.add('active');
+    if (href === currentPage) {
+      link.classList.add('active');
+    }
   });
 
-  /* ── Scroll Reveal ── */
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((e) => {
-        if (e.isIntersecting) e.target.classList.add('visible');
-      });
-    },
-    { threshold: 0.15 }
-  );
-  document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+  /* ── Animación Scroll Reveal con IntersectionObserver ── */
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+  } else {
+    // Fallback para navegadores antiguos
+    document.querySelectorAll('.reveal').forEach((el) => el.classList.add('visible'));
+  }
 
-  /* ── Shop Filters ── */
+  /* ── Filtros del Catálogo Oficial ── */
   const filterBtns = document.querySelectorAll('.filter-btn');
   const products = document.querySelectorAll('.product-card');
   if (filterBtns.length && products.length) {
@@ -82,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ── Guide Tabs ── */
+  /* ── Pestañas de la Guía de Productos ── */
   const tabs = document.querySelectorAll('.guide-tab');
   const contents = document.querySelectorAll('.guide-content');
   if (tabs.length && contents.length) {
@@ -97,70 +121,83 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ── Add to Cart Toast ── */
-  document.querySelectorAll('.add-to-cart').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      showToast('Producto agregado al carrito ✓');
-    });
-  });
-
-  /* ── Lightbox Shared ── */
+  /* ── Lightbox Unificado (Galería + Contenido Extra) ── */
   const lightbox = document.getElementById('lightbox');
   if (lightbox) {
     const lbClose = document.getElementById('lbClose');
     const lbImg = document.getElementById('lbImg');
+    const lbPrev = document.getElementById('lbPrev');
+    const lbNext = document.getElementById('lbNext');
 
-    lbClose?.addEventListener('click', () => lightbox.classList.remove('open'));
-    lightbox.addEventListener('click', e => {
-      if (e.target === e.currentTarget) lightbox.classList.remove('open');
-    });
-
-    document.addEventListener('keydown', e => {
-      if (!lightbox.classList.contains('open')) return;
-      if (e.key === 'Escape') lightbox.classList.remove('open');
-      if (e.key === 'ArrowLeft' && typeof changeImage === 'function') changeImage(-1);
-      if (e.key === 'ArrowRight' && typeof changeImage === 'function') changeImage(1);
-    });
-
-    /* ── Lightbox (Gallery) — supports dynamic items ── */
-    const galleryGrid = document.querySelector('.gallery-grid');
+    let currentImages = [];
     let currentIdx = 0;
 
-    window.changeImage = function(dir) {
-      const imgs = Array.from(document.querySelectorAll('.gallery-item img')).map(i => i.src);
-      if (!imgs.length) return;
-      currentIdx = (currentIdx + dir + imgs.length) % imgs.length;
-      lbImg.src = imgs[currentIdx];
-    };
-
-    function openLightbox(idx) {
-      const items = document.querySelectorAll('.gallery-item');
-      if (!items.length) return;
+    function openLightboxWithImages(images, idx) {
+      if (!images.length) return;
+      currentImages = images;
       currentIdx = idx;
-      const img = items[idx].querySelector('img');
-      lbImg.src = img?.src || '';
-      lbImg.alt = img?.alt || '';
+      updateLightboxImage();
       lightbox.classList.add('open');
     }
 
-    galleryGrid?.addEventListener('click', function(e) {
-      const item = e.target.closest('.gallery-item');
-      if (!item) return;
-      const items = Array.from(this.querySelectorAll('.gallery-item'));
-      const idx = items.indexOf(item);
-      if (idx !== -1) openLightbox(idx);
+    function updateLightboxImage() {
+      if (!currentImages.length) return;
+      const item = currentImages[currentIdx];
+      lbImg.src = item.src;
+      lbImg.alt = item.alt || 'ESVOJOP Voleibol';
+    }
+
+    window.changeLightboxImage = function(dir) {
+      if (!currentImages.length) return;
+      currentIdx = (currentIdx + dir + currentImages.length) % currentImages.length;
+      updateLightboxImage();
+    };
+
+    lbClose?.addEventListener('click', () => lightbox.classList.remove('open'));
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) lightbox.classList.remove('open');
     });
 
-    document.getElementById('lbPrev')?.addEventListener('click', () => changeImage(-1));
-    document.getElementById('lbNext')?.addEventListener('click', () => changeImage(1));
+    lbPrev?.addEventListener('click', () => window.changeLightboxImage(-1));
+    lbNext?.addEventListener('click', () => window.changeLightboxImage(1));
 
-    /* ── Lightbox (Extra Cards) — supports dynamic items ── */
-    document.querySelector('.extra-grid')?.addEventListener('click', function(e) {
-      const card = e.target.closest('.extra-card[data-img]');
-      if (!card) return;
-      lbImg.src = card.dataset.img;
-      lbImg.alt = card.querySelector('img')?.alt || '';
-      lightbox.classList.add('open');
+    document.addEventListener('keydown', (e) => {
+      if (!lightbox.classList.contains('open')) return;
+      if (e.key === 'Escape') lightbox.classList.remove('open');
+      if (e.key === 'ArrowLeft') window.changeLightboxImage(-1);
+      if (e.key === 'ArrowRight') window.changeLightboxImage(1);
     });
+
+    // Galería principal
+    const galleryGrid = document.querySelector('.gallery-grid');
+    if (galleryGrid) {
+      galleryGrid.addEventListener('click', (e) => {
+        const item = e.target.closest('.gallery-item');
+        if (!item) return;
+        const allItems = Array.from(galleryGrid.querySelectorAll('.gallery-item'));
+        const images = allItems.map((el) => {
+          const img = el.querySelector('img');
+          return { src: img ? img.src : '', alt: img ? img.alt : '' };
+        });
+        const idx = allItems.indexOf(item);
+        if (idx !== -1) openLightboxWithImages(images, idx);
+      });
+    }
+
+    // Contenido extra
+    const extraGrid = document.querySelector('.extra-grid');
+    if (extraGrid) {
+      extraGrid.addEventListener('click', (e) => {
+        const card = e.target.closest('.extra-card[data-img]');
+        if (!card) return;
+        const allCards = Array.from(extraGrid.querySelectorAll('.extra-card[data-img]'));
+        const images = allCards.map((el) => {
+          const img = el.querySelector('img');
+          return { src: el.dataset.img || (img ? img.src : ''), alt: img ? img.alt : '' };
+        });
+        const idx = allCards.indexOf(card);
+        if (idx !== -1) openLightboxWithImages(images, idx);
+      });
+    }
   }
 });
