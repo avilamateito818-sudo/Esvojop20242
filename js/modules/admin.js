@@ -496,3 +496,4 @@ const EsvojopAdmin = (() => {
 document.addEventListener('DOMContentLoaded', () => {
   EsvojopAdmin.init();
 });
+
