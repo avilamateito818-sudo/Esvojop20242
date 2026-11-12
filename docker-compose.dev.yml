@@ -1,0 +1,21 @@
+services:
+  esvojop_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: esvojop-dev:2026
+    container_name: esvojop_dev_app
+    restart: unless-stopped
+    volumes:
+      # Montaje en tiempo real: cualquier cambio que hagas en el código se refleja al instante
+      - .:/app
+    ports:
+      # Puerto 8087 aislado para desarrollo en vivo
+      - "${ESVOJOP_DEV_PORT:-8087}:8080"
+    networks:
+      - esvojop_dev_net
+
+networks:
+  esvojop_dev_net:
+    name: esvojop_dev_net
+    driver: bridge

@@ -24,3 +24,4 @@ networks:
   esvojop_isolated_network:
     name: esvojop_isolated_network
     driver: bridge
+

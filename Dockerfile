@@ -26,3 +26,4 @@ HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
 
 # Arrancar Nginx en primer plano
 CMD ["nginx", "-g", "daemon off;"]
+

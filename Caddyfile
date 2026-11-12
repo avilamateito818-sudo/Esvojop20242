@@ -1,0 +1,16 @@
+:80 {
+    root * /usr/share/caddy
+    file_server
+    encode gzip zstd
+
+    # Enrutamiento de páginas estáticas
+    try_files {path} {path}/ /index.html
+
+    # Cabeceras de seguridad y caché
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Cache-Control "public, max-age=2592000"
+    }
+}

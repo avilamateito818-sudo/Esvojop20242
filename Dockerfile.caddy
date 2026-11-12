@@ -1,0 +1,19 @@
+# ═══════════════════════════════════════════════════════
+# ESVOJOP 2026 · Alternativa 2: Docker con Caddy Server
+# Servidor web moderno con soporte nativo HTTP/2 y HTTP/3
+# ═══════════════════════════════════════════════════════
+FROM caddy:2.8-alpine
+
+LABEL maintainer="ESVOJOP Club de Voleibol"
+LABEL version="2026.2-caddy"
+LABEL description="Contenedor Caddy ultra-rápido y aislado para ESVOJOP"
+
+# Copiar archivo de configuración Caddyfile
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# Copiar los archivos del proyecto al directorio web de Caddy
+COPY . /usr/share/caddy/
+
+EXPOSE 80
+
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

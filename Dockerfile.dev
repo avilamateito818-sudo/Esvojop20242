@@ -1,0 +1,23 @@
+# ═══════════════════════════════════════════════════════
+# ESVOJOP 2026 · Alternativa 3: Docker de Desarrollo con Live-Reload
+# Recarga automática en el navegador al modificar HTML/CSS/JS
+# ═══════════════════════════════════════════════════════
+FROM node:20-alpine
+
+LABEL maintainer="ESVOJOP Club de Voleibol"
+LABEL version="2026.dev"
+LABEL description="Contenedor de desarrollo con recarga en vivo para ESVOJOP"
+
+WORKDIR /app
+
+# Instalar live-server de forma global
+RUN npm install -g live-server
+
+# Copiar archivos
+COPY . .
+
+# Exponer puerto interno
+EXPOSE 8080
+
+# Iniciar live-server escuchando todas las interfaces
+CMD ["live-server", "--host=0.0.0.0", "--port=8080", "--no-browser"]

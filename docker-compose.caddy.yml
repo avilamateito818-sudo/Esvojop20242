@@ -1,0 +1,20 @@
+services:
+  esvojop_caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile.caddy
+    image: esvojop-caddy:2026
+    container_name: esvojop_caddy_app
+    restart: unless-stopped
+    ports:
+      # Puerto 8086 dedicado y aislado para no colisionar con nada
+      - "${ESVOJOP_CADDY_PORT:-8086}:80"
+    networks:
+      - esvojop_caddy_net
+    environment:
+      - NODE_ENV=production
+
+networks:
+  esvojop_caddy_net:
+    name: esvojop_caddy_net
+    driver: bridge
