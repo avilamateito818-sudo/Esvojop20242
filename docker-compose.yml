@@ -1,0 +1,26 @@
+services:
+  esvojop_web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: esvojop-frontend:2026
+    container_name: esvojop_web_app
+    restart: unless-stopped
+    ports:
+      # Puerto 8085 mapeado para evitar colisiones con otros contenedores o puertos comunes (80, 8080, 3000)
+      - "${ESVOJOP_PORT:-8085}:80"
+    networks:
+      - esvojop_isolated_network
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  esvojop_isolated_network:
+    name: esvojop_isolated_network
+    driver: bridge
