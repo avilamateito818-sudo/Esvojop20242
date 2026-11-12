@@ -56,6 +56,23 @@ document.addEventListener('DOMContentLoaded', () => {
         hamburger.setAttribute('aria-expanded', 'false');
       });
     });
+
+    // Cerrar menú al hacer clic fuera o pulsar Escape
+    document.addEventListener('click', (e) => {
+      if (navLinks.classList.contains('open') && !navLinks.contains(e.target) && !hamburger.contains(e.target)) {
+        hamburger.classList.remove('open');
+        navLinks.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && navLinks.classList.contains('open')) {
+        hamburger.classList.remove('open');
+        navLinks.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
+      }
+    });
   }
 
   /* ── Resaltar Enlace Activo en Navegación ── */
@@ -252,6 +269,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     lbPrev?.addEventListener('click', () => window.changeLightboxImage(-1));
     lbNext?.addEventListener('click', () => window.changeLightboxImage(1));
+
+    // Soporte táctil de deslizamiento (Swipe) para iOS Safari y Android
+    let touchStartX = 0;
+    let touchEndX = 0;
+    lightbox.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    lightbox.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      const diff = touchEndX - touchStartX;
+      if (Math.abs(diff) > 45) {
+        if (diff < 0) {
+          window.changeLightboxImage(1); // Deslizar hacia la izquierda -> Siguiente
+        } else {
+          window.changeLightboxImage(-1); // Deslizar hacia la derecha -> Anterior
+        }
+      }
+    }, { passive: true });
 
     document.addEventListener('keydown', (e) => {
       if (!lightbox.classList.contains('open')) return;
