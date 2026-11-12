@@ -3406,3 +3406,192 @@ body.admin-editing-texts [data-cms-editable]:focus {
   transform: translateY(-2px) scale(1.05);
   box-shadow: 0 6px 16px rgba(0, 210, 255, 0.6);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   BOTONES DE EDICIÓN VISUAL [✏️ EDITAR] & [➕ COLOCAR COSAS]
+   Cumplimiento Normativo: WCAG 2.1 AA / Touch Targets >= 44px
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Barra Flotante de Edición por Tarjeta / Bloque ── */
+.admin-block-toolbar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: rgba(10, 22, 40, 0.94);
+  border: 1px solid rgba(255, 215, 0, 0.45);
+  border-radius: 30px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 0 15px rgba(255, 215, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0.95;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.admin-block-toolbar:hover,
+.admin-block-toolbar:focus-within {
+  opacity: 1;
+  transform: translateY(-2px);
+  border-color: var(--yellow);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75), 0 0 20px rgba(255, 215, 0, 0.35);
+}
+
+/* ── Botón Accesible [✏️ Editar] ── */
+.admin-btn-edit {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.22), rgba(255, 215, 0, 0.38));
+  border: 1px solid var(--yellow);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  transition: all var(--transition);
+}
+
+.admin-btn-edit:hover {
+  background: var(--yellow);
+  color: #060d1a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.45);
+}
+
+.admin-btn-edit:focus-visible {
+  outline: 2px solid #ffffff !important;
+  outline-offset: 2px;
+}
+
+/* ── Botón Accesible [🗑️ Quitar] ── */
+.admin-btn-del {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 23, 68, 0.85);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  font-size: 1.35rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  line-height: 1;
+}
+
+.admin-btn-del:hover {
+  background: #ff1744;
+  color: #ffffff;
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 0 18px rgba(255, 23, 68, 0.7);
+}
+
+.admin-btn-del:focus-visible {
+  outline: 2px solid #ffffff !important;
+  outline-offset: 2px;
+}
+
+/* ── Contenedor y Botón [➕ Colocar más cosas aquí] ── */
+.admin-add-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+.admin-btn-add-item {
+  background: rgba(10, 22, 40, 0.9);
+  border: 2px dashed rgba(255, 215, 0, 0.6);
+  color: var(--yellow);
+  padding: 0.85rem 2rem;
+  border-radius: 30px;
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 48px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 215, 0, 0.15);
+  transition: all var(--transition);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.admin-btn-add-item:hover {
+  background: var(--yellow);
+  color: #060d1a;
+  border-style: solid;
+  border-color: var(--yellow);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.45);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.admin-btn-add-item:focus-visible {
+  outline: 2px solid #ffffff !important;
+  outline-offset: 3px;
+}
+
+/* ── Bloque Creado Dinámicamente ── */
+.custom-cms-block {
+  border: 1px solid rgba(255, 215, 0, 0.35) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.12) !important;
+  animation: cmsBlockEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cmsBlockEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Ajustes Responsivos para Pantallas Pequeñas ── */
+@media (max-width: 768px) {
+  .admin-block-toolbar {
+    top: 8px;
+    right: 8px;
+    gap: 4px;
+    padding: 3px 5px;
+  }
+
+  .admin-btn-edit {
+    padding: 5px 10px;
+    font-size: 0.72rem;
+  }
+
+  .admin-btn-del {
+    width: 44px;
+    height: 44px;
+  }
+
+  .admin-btn-add-item {
+    width: 100%;
+    max-width: 360px;
+    padding: 0.75rem 1.2rem;
+    font-size: 0.85rem;
+  }
+}
