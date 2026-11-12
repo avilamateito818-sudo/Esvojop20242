@@ -3,7 +3,12 @@
 .vscode
 *.log
 docker-compose.yml
+docker-compose.*.yml
 Dockerfile
+Dockerfile.*
+Caddyfile
+nginx.conf
+iniciar-docker.bat
 .dockerignore
+docs
 README.md
-
