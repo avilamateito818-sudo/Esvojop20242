@@ -18,3 +18,4 @@ networks:
   esvojop_caddy_net:
     name: esvojop_caddy_net
     driver: bridge
+
