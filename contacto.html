@@ -57,6 +57,11 @@
     <div class="page-header-overlay"></div>
     <div class="bg-lines"></div>
     <div style="position:relative;z-index:2;display:inline-block;padding:2.5rem 3rem;border:1px solid rgba(255,215,0,0.08);border-radius:2px;max-width:650px;background:rgba(6,13,26,0.3);backdrop-filter:blur(4px);">
+      <div class="breadcrumb reveal">
+        <a href="index.html">Inicio</a>
+        <span class="sep">/</span>
+        <span class="current">Contacto</span>
+      </div>
       <div class="page-tag reveal" style="margin-left:0;border-color:var(--yellow);"><span class="txt">Contáctanos</span></div>
       <h1 class="page-title reveal" style="text-align:left;font-size:clamp(3.5rem,7vw,6rem);"><span>Contacto</span></h1>
       <p class="page-desc reveal" style="text-align:left;margin-left:0;max-width:500px;font-size:1.1rem;color:#e8e4db;-webkit-text-fill-color:#e8e4db;background:none;text-shadow:0 2px 12px rgba(0,0,0,0.6);">Forma parte de ESVOJOP. Entrena, compite y crece con nosotros.</p>
@@ -92,31 +97,37 @@
               </div>
             </div>
             <div class="form-group">
-              <label for="asunto">Asunto</label>
-              <select name="subject" id="asunto" class="form-control">
-                <option value="">Selecciona un asunto</option>
-                <option value="inscripcion">Inscripción al club</option>
-                <option value="informacion">Información general</option>
-                <option value="horarios">Horarios y entrenamientos</option>
-                <option value="eventos">Eventos y torneos</option>
-                <option value="otro">Otro</option>
+              <label for="asunto">Modalidad de Interés</label>
+              <select name="subject" id="asunto" class="form-control" required>
+                <option value="Clase de Cortesia Gratuita">⚡ Quiero Agendar Clase de Cortesía GRATIS</option>
+                <option value="Inscripcion Oficial ($90.000 COP)">🏐 Inscripción Oficial al Club ($90.000 COP)</option>
+                <option value="Informacion sobre Horarios y Sede IRDET">📍 Información sobre Horarios y Sede IRDET</option>
+                <option value="Otra Consulta Deportiva">💬 Otra Consulta Deportiva</option>
               </select>
             </div>
             <div class="form-group">
               <label for="mensaje">Mensaje</label>
               <textarea name="message" id="mensaje" class="form-control" placeholder="Escribe tu mensaje aquí..." rows="10" required></textarea>
             </div>
-            <button type="submit" class="btn btn-lg btn-dark btn-block">Enviar Mensaje</button>
+            <button type="submit" class="btn btn-lg btn-secondary btn-block btn-shine">⚡ Enviar Mensaje</button>
           </form>
         </div>
         <div class="contact-info reveal">
           <div class="contact-card">
             <span class="icon">📍</span>
-            <h4>Lugar de entrenamiento</h4>
-            <p>Polideportivo IRDET<br>Instalaciones adecuadas para la práctica del voleibol</p>
-            <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid rgba(255,215,0,0.06);">
-              <p style="font-size:0.78rem;color:var(--gray-light);">Martes y Jueves<br>5:00 PM – 8:00 PM</p>
+            <div class="live-status-beacon" style="margin-bottom:0.6rem;">
+              <span class="beacon-dot-wrap">
+                <span class="beacon-pulse"></span>
+                <span class="beacon-dot"></span>
+              </span>
+              <span>Cancha Activa</span>
             </div>
+            <h4>Lugar de entrenamiento</h4>
+            <p>Polideportivo IRDET<br>Tunja, Boyacá — Colombia</p>
+            <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid rgba(255,215,0,0.1);">
+              <p style="font-size:0.8rem;color:var(--yellow);font-weight:700;">Martes y Jueves · 5:00 PM a 8:00 PM</p>
+            </div>
+            <a href="https://maps.google.com/?q=Polideportivo+IRDET+Tunja" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm btn-block" style="margin-top:0.8rem;font-size:0.75rem;">📍 Ver en Google Maps</a>
           </div>
           <div class="contact-card">
             <span class="icon">📞</span>

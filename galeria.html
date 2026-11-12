@@ -56,6 +56,11 @@
   <div class="page-header" style="background:linear-gradient(180deg, rgba(6,13,26,0.7) 0%, rgba(6,13,26,0.95) 100%), url('img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.25%20PM%20(2).jpeg') center/cover no-repeat;">
     <div class="page-header-overlay"></div>
     <div class="bg-lines"></div>
+    <div class="breadcrumb reveal">
+      <a href="index.html">Inicio</a>
+      <span class="sep">/</span>
+      <span class="current">Galería</span>
+    </div>
     <div class="page-tag reveal"><span class="txt">Momentos en Cancha</span></div>
     <h1 class="page-title reveal"><span>Galería</span> ESVOJOP</h1>
     <p class="page-desc reveal">Los mejores instantes de competencia, entrenamiento y compañerismo en el Polideportivo IRDET y torneos de Boyacá.</p>
@@ -63,52 +68,59 @@
 
   <section style="position:relative;">
     <div class="container">
-      <div class="gallery-grid">
-        <div class="gallery-item reveal">
+      <div class="gallery-filter-bar reveal">
+        <button class="gallery-filter-btn active" data-filter="all">📸 Todas las Fotos</button>
+        <button class="gallery-filter-btn" data-filter="partidos">🏆 Partidos & Torneos</button>
+        <button class="gallery-filter-btn" data-filter="entrenamientos">🏐 Entrenamientos IRDET</button>
+        <button class="gallery-filter-btn" data-filter="comunidad">🤝 Comunidad & Equipo</button>
+      </div>
+
+      <div class="gallery-grid reveal-stagger">
+        <div class="gallery-item reveal-scale" data-category="partidos">
           <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.24%20PM%20(1).jpeg" alt="Partido de Liga Departamental Boyacá" loading="lazy">
           <div class="overlay"><span>Partido de Liga · Fase Departamental Boyacá</span></div>
         </div>
-        <div class="gallery-item reveal">
+        <div class="gallery-item reveal-scale" data-category="entrenamientos">
           <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.24%20PM.jpeg" alt="Ataque y Remate en la Red" loading="lazy">
           <div class="overlay"><span>Ataque y Remate en la Red · Entrenamiento IRDET</span></div>
         </div>
-        <div class="gallery-item reveal">
+        <div class="gallery-item reveal-scale" data-category="entrenamientos">
           <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.25%20PM%20(1).jpeg" alt="Bloqueo Defensivo Sincronizado" loading="lazy">
           <div class="overlay"><span>Bloqueo Defensivo Sincronizado</span></div>
         </div>
-        <div class="gallery-item reveal">
+        <div class="gallery-item reveal-scale" data-category="comunidad">
           <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.25%20PM%20(2).jpeg" alt="Espíritu de Equipo ESVOJOP" loading="lazy">
           <div class="overlay"><span>Espíritu de Equipo y Celebración ESVOJOP</span></div>
         </div>
-        <div class="gallery-item reveal">
+        <div class="gallery-item reveal-scale" data-category="entrenamientos">
           <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.25%20PM%20(3).jpeg" alt="Preparación Física en Cancha" loading="lazy">
           <div class="overlay"><span>Preparación Física y Pliometría en Cancha</span></div>
         </div>
-        <div class="gallery-item reveal">
+        <div class="gallery-item reveal-scale" data-category="entrenamientos">
           <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.25%20PM.jpeg" alt="Circuito Técnico de Recepción" loading="lazy">
           <div class="overlay"><span>Circuito Técnico de Saque y Recepción</span></div>
         </div>
-        <div class="gallery-item reveal">
+        <div class="gallery-item reveal-scale" data-category="partidos">
           <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.26%20PM%20(1).jpeg" alt="Equipo Juvenil ESVOJOP" loading="lazy">
           <div class="overlay"><span>Equipo Juvenil ESVOJOP · Torneo Regional</span></div>
         </div>
-        <div class="gallery-item reveal">
+        <div class="gallery-item reveal-scale" data-category="partidos">
           <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.26%20PM%20(2).jpeg" alt="Fundamentos Técnicos en Competencia" loading="lazy">
           <div class="overlay"><span>Fundamentos Técnicos en Competencia Oficial</span></div>
         </div>
-        <div class="gallery-item reveal">
+        <div class="gallery-item reveal-scale" data-category="comunidad">
           <img src="img/fotos/imagines/WhatsApp%20Image%202026-04-10%20at%206.04.26%20PM.jpeg" alt="Concentración Táctica y Trabajo en Equipo" loading="lazy">
           <div class="overlay"><span>Concentración Táctica y Trabajo en Equipo</span></div>
         </div>
       </div>
 
       <!-- Trial CTA Banner -->
-      <div class="trial-section reveal" style="margin-top:4rem;">
+      <div class="trial-section reveal-scale" style="margin-top:4rem;">
         <div class="trial-badge">Sé Parte Del Equipo</div>
         <h2>¿Quieres vivir estos momentos en la cancha?</h2>
         <p>Inscríbete hoy en ESVOJOP y entrena con el mejor equipo formativo en el Polideportivo IRDET de Tunja.</p>
         <div class="trial-actions">
-          <a href="https://wa.me/573103434293?text=Hola%20Profesor%20Jorge%2C%20quisiera%20solicitar%20mi%20Clase%20de%20Cortes%C3%ADa%20Gratuita%20en%20ESVOJOP" target="_blank" rel="noopener noreferrer" class="btn btn-lg btn-whatsapp">
+          <a href="https://wa.me/573103434293?text=Hola%20Profesor%20Jorge%2C%20quisiera%20solicitar%20mi%20Clase%20de%20Cortes%C3%ADa%20Gratuita%20en%20ESVOJOP" target="_blank" rel="noopener noreferrer" class="btn btn-lg btn-secondary btn-shine">
             💬 Solicitar Clase de Cortesía Gratis
           </a>
           <a href="contacto.html" class="btn btn-lg btn-outline">
