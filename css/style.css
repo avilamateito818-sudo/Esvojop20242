@@ -3289,14 +3289,120 @@ body.admin-mode .admin-toggle {
 
   .hud-actions {
     width: 100%;
-    justify-content: space-around;
+    justify-content: flex-start;
     gap: 0.4rem;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
   }
 
   .hud-btn {
     padding: 0.45rem 0.65rem;
     font-size: 0.72rem;
-    flex: 1;
+    flex-shrink: 0;
     justify-content: center;
   }
+}
+
+/* ── Estilos de CMS en Vivo (Modo Edición Visual) ── */
+.admin-hud-btn-active {
+  background: var(--yellow) !important;
+  color: #060d1a !important;
+  border-color: var(--yellow) !important;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.5) !important;
+  font-weight: 800 !important;
+  transform: translateY(-1px);
+}
+
+body.admin-editing-texts [data-cms-editable] {
+  cursor: text !important;
+  position: relative;
+  outline: 1px dashed rgba(255, 215, 0, 0.35);
+  outline-offset: 3px;
+  border-radius: 4px;
+  transition: outline 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.admin-editing-texts [data-cms-editable]:hover {
+  outline: 2px dashed var(--yellow) !important;
+  background: rgba(255, 215, 0, 0.08) !important;
+}
+
+body.admin-editing-texts [data-cms-editable]:focus {
+  outline: 2px solid var(--yellow) !important;
+  outline-offset: 4px;
+  background: rgba(255, 215, 0, 0.12) !important;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.35) !important;
+}
+
+.cms-saved-flash {
+  animation: cmsFlash 0.7s ease !important;
+}
+
+@keyframes cmsFlash {
+  0% {
+    background: rgba(0, 230, 118, 0.35) !important;
+    outline: 2px solid #00e676 !important;
+  }
+  100% {
+    background: transparent;
+    outline: none;
+  }
+}
+
+/* ── Insignia para Quitar Elementos ── */
+.admin-delete-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 50;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 23, 68, 0.95);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), 0 0 10px rgba(255, 23, 68, 0.4);
+  transition: transform var(--transition), background var(--transition);
+  line-height: 1;
+}
+
+.admin-delete-badge:hover {
+  background: #ff1744;
+  transform: scale(1.2) rotate(90deg);
+  box-shadow: 0 0 20px rgba(255, 23, 68, 0.8);
+}
+
+/* ── Insignia para Cambiar Imágenes ── */
+.admin-img-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 50;
+  background: rgba(0, 168, 255, 0.92);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 168, 255, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all var(--transition);
+}
+
+.admin-img-badge:hover {
+  background: #00d2ff;
+  color: #060d1a;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 210, 255, 0.6);
 }
