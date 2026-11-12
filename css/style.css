@@ -467,6 +467,33 @@ section { padding: 5rem 3rem; position: relative; }
 
 .btn-sm { padding: 0.6rem 1.5rem; font-size: 0.7rem; }
 
+.btn-lg {
+  padding: 1rem 2.4rem;
+  font-size: 0.88rem;
+  letter-spacing: 0.1em;
+}
+
+.btn-block {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.btn-whatsapp {
+  background: linear-gradient(135deg, #25d366, #1ebe5d);
+  color: #ffffff;
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.35);
+}
+
+.btn-whatsapp:hover {
+  background: linear-gradient(135deg, #2ae16e, #25d366);
+  color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(37, 211, 102, 0.55);
+}
+
 /* ── Cards ── */
 .card {
   background: var(--surface); border-radius: var(--radius);
@@ -1158,7 +1185,8 @@ section { padding: 5rem 3rem; position: relative; }
 
 .form-group input,
 .form-group textarea,
-.form-group select {
+.form-group select,
+.form-control {
   background: var(--surface); border: 1px solid rgba(255, 215, 0, 0.12);
   padding: 0.9rem 1rem; color: var(--white); font-family: var(--font-body);
   font-size: 1rem; /* Mínimo 16px para evitar auto-zoom involuntario en Safari iOS */
@@ -1166,6 +1194,7 @@ section { padding: 5rem 3rem; position: relative; }
   -webkit-appearance: none;
   appearance: none;
   transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease; outline: none;
+  width: 100%;
 }
 
 .form-group select {
@@ -1194,7 +1223,8 @@ input[type="number"] {
 
 .form-group input:focus,
 .form-group textarea:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-control:focus {
   border-color: var(--yellow);
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18), 0 0 16px rgba(0, 85, 255, 0.2);
   background: rgba(15, 31, 61, 0.95);
@@ -1641,16 +1671,29 @@ footer .social a:hover {
 .lightbox .lb-close:hover { transform: rotate(90deg); }
 .lb-nav {
   position: absolute; top: 50%; transform: translateY(-50%);
-  color: var(--yellow); font-size: 2.5rem; cursor: pointer;
-  background: none; border: none; font-family: var(--font-body);
-  padding: 1rem; transition: transform 0.3s; line-height: 1;
-  opacity: 0.6; z-index: 1;
-  width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;
+  background: rgba(6, 13, 26, 0.75);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  color: var(--white);
+  font-size: 2.2rem; line-height: 1;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.25s ease;
+  z-index: 10001;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
-.lb-prev { left: 1rem; }
-.lb-next { right: 1rem; }
+
+.lb-nav:hover {
+  background: var(--yellow);
+  color: #060d1a;
+  border-color: var(--yellow);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.lb-prev { left: max(1.5rem, calc(0.5rem + env(safe-area-inset-left, 0px))); }
+.lb-next { right: max(1.5rem, calc(0.5rem + env(safe-area-inset-right, 0px))); }
 
 /* ═══════════════════════════════════════════
    EXTRA CONTENT
@@ -2011,35 +2054,17 @@ footer .social a:hover {
   fill: #ffffff;
 }
 
-/* ── Lightbox Nav Buttons ── */
-.lb-nav {
-  position: absolute; top: 50%; transform: translateY(-50%);
-  background: rgba(6, 13, 26, 0.6);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  color: var(--white);
-  font-size: 2.5rem; line-height: 1;
-  width: 50px; height: 50px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.25s ease;
-  z-index: 10001;
-}
-
-.lb-nav:hover {
-  background: var(--yellow);
-  color: var(--bg);
-  border-color: var(--yellow);
-}
-
-.lb-prev { left: 1.5rem; }
-.lb-next { right: 1.5rem; }
-
 @media (max-width: 600px) {
-  .btn-whatsapp-float { bottom: 18px; right: 18px; width: 50px; height: 50px; }
+  .btn-whatsapp-float {
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    right: calc(18px + env(safe-area-inset-right, 0px));
+    width: 52px;
+    height: 52px;
+  }
   .btn-whatsapp-float svg { width: 28px; height: 28px; }
-  .lb-prev { left: 0.5rem; }
-  .lb-next { right: 0.5rem; }
+  .lb-nav { width: 44px; height: 44px; font-size: 1.8rem; }
+  .lb-prev { left: max(0.5rem, env(safe-area-inset-left, 0px)); }
+  .lb-next { right: max(0.5rem, env(safe-area-inset-right, 0px)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2325,6 +2350,43 @@ footer .social a:hover {
   50% { transform: scale(1.08); filter: drop-shadow(0 0 16px rgba(255, 215, 0, 0.55)); }
 }
 
+.trial-box-left {
+  position: relative;
+  z-index: 2;
+}
+
+.trial-box-left p {
+  text-align: left;
+}
+
+.trial-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  margin-top: 1.8rem;
+}
+
+.trial-section h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
+  color: var(--white);
+  margin-bottom: 0.8rem;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.trial-section > .container > p,
+.trial-section p {
+  color: var(--gray-light);
+  max-width: 650px;
+  margin: 0 auto 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  text-align: center;
+}
+
 @media (max-width: 860px) {
   .trial-card { grid-template-columns: 1fr; padding: 2rem; gap: 2rem; }
 }
@@ -2550,9 +2612,71 @@ footer .social a:hover {
   margin: 0;
 }
 
+/* Venue Strip Extended Details */
+.vs-info h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  color: var(--white);
+  margin-bottom: 0.6rem;
+  letter-spacing: 0.04em;
+}
+
+.vs-info p {
+  color: var(--gray-light);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+}
+
+.vs-meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.2rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.12);
+}
+
+.vs-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.vs-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.vs-item strong {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--yellow);
+  letter-spacing: 0.06em;
+  margin-bottom: 0.15rem;
+}
+
+.vs-item p {
+  font-size: 0.85rem;
+  color: var(--white);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.vs-cta {
+  background: rgba(6, 13, 26, 0.7);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: var(--radius);
+  padding: 1.8rem;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
 @media (max-width: 768px) {
   .venue-strip { grid-template-columns: 1fr; padding: 1.5rem; gap: 1.5rem; }
   .venue-features { grid-template-columns: 1fr; }
+  .vs-meta { grid-template-columns: 1fr; gap: 0.9rem; }
 }
 
 /* ── Ficha del Cuerpo Técnico / Director Deportivo ── */
@@ -2607,6 +2731,27 @@ footer .social a:hover {
   color: var(--white);
   margin-bottom: 0.8rem;
   line-height: 1;
+}
+
+.coach-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.2rem;
+}
+
+.cb-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 215, 0, 0.08);
+  color: var(--yellow);
+  border: 1px solid rgba(255, 215, 0, 0.22);
+  border-radius: 4px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 @media (max-width: 680px) {
