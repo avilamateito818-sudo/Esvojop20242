@@ -10,8 +10,8 @@ services:
       # Montaje en tiempo real: cualquier cambio que hagas en el código se refleja al instante
       - .:/app
     ports:
-      # Puerto 8087 aislado para desarrollo en vivo
-      - "${ESVOJOP_DEV_PORT:-8087}:8080"
+      # Puerto 8086 unificado para desarrollo
+      - "${ESVOJOP_DEV_PORT:-8086}:8080"
     networks:
       - esvojop_dev_net
 
@@ -19,4 +19,3 @@ networks:
   esvojop_dev_net:
     name: esvojop_dev_net
     driver: bridge
-

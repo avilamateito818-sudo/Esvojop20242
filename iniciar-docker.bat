@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ═══════════════════════════════════════════════════
-echo   ESVOJOP 2026 · INICIADOR DOCKER AISLADO
+echo   ESVOJOP 2026 · INICIADOR DOCKER (PUERTO 8086)
 echo ═══════════════════════════════════════════════════
 echo.
 
@@ -25,9 +25,9 @@ docker-compose up -d --build
 echo.
 echo ═══════════════════════════════════════════════════
 echo   ¡Listo! Tu sitio está corriendo en Docker:
-echo   👉 http://localhost:8085
+echo   👉 http://localhost:8086
 echo ═══════════════════════════════════════════════════
 echo.
 echo Abriendo en tu navegador...
-start http://localhost:8085
+start http://localhost:8086
 pause
