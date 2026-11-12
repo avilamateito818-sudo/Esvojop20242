@@ -4,9 +4,19 @@
     "-webkit-text-stroke-width",
     "-webkit-text-stroke-color",
     "-webkit-text-fill-color",
-    "-webkit-background-clip"
+    "-webkit-background-clip",
+    "-webkit-backdrop-filter",
+    "-webkit-tap-highlight-color",
+    "-webkit-text-size-adjust",
+    "-webkit-font-smoothing",
+    "-moz-osx-font-smoothing",
+    "-webkit-appearance",
+    "-moz-appearance",
+    "-webkit-user-select",
+    "text-size-adjust"
   ],
+  "css.lint.duplicateProperties": "ignore",
+  "css.lint.vendorPrefix": "ignore",
   "css.lint.unknownVendorSpecificProperties": "ignore",
   "css.lint.unknownProperties": "ignore"
 }
-
