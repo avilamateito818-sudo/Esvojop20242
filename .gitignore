@@ -4,3 +4,5 @@ Thumbs.db
 docs/
 *AUDITORIA*.md
 *MANUAL*.md
+.vercel/
+vercel.json
