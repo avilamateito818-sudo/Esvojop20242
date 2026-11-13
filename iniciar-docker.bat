@@ -20,7 +20,20 @@ if %errorlevel% neq 0 (
 
 echo [✓] Motor de Docker activo. Construyendo y levantando contenedor...
 cd /d "%~dp0"
-docker-compose up -d --build
+
+docker compose version >nul 2>&1
+if %errorlevel% equ 0 (
+    docker compose up -d --build
+) else (
+    docker-compose up -d --build
+)
+
+if %errorlevel% neq 0 (
+    echo.
+    echo [X] Error al levantar el contenedor Docker. Revisa el estado de Docker Desktop.
+    pause
+    exit /b 1
+)
 
 echo.
 echo ═══════════════════════════════════════════════════
