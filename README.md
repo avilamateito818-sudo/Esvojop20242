@@ -40,19 +40,12 @@ Sitio web oficial del **Club de Voleibol ESVOJOP**, diseñado para la formación
 ├── js/
 │   ├── main.js                 # Control de interacciones, menú móvil y lightbox
 │   └── modules/
+│       ├── admin.js            # Panel de administración visual
 │       └── contacto.js         # Lógica AJAX de formulario con fallback a WhatsApp
 ├── img/                        # Fotografías y vectores SVG del club
-└── docs/                       # Documentación técnica y manuales de administración
-    ├── MANUAL_ADMINISTRADOR_SIN_ERRORES.md
-    ├── PLAN_MVP_PRODUCCION.md
-    └── AUDITORIA_TECNICA_SENIOR.md
+├── Dockerfile                  # Imagen de producción (Nginx Alpine)
+└── docker-compose.yml          # Orquestación Docker unificada en puerto 8086
 ```
-
----
-
-## 📖 Documentación para Administradores
-
-Consulta [`docs/MANUAL_ADMINISTRADOR_SIN_ERRORES.md`](docs/MANUAL_ADMINISTRADOR_SIN_ERRORES.md) para saber cómo modificar precios, teléfonos y fotografías sin afectar la lógica de programación.
 
 ---
 
