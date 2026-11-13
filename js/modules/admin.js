@@ -3,28 +3,223 @@
    Arquitectura: Desacoplada, Persistente (LocalStorage)
    Sin sobreescritura de código (Non-Destructive Runtime Layer)
    Normativa: Accesibilidad WCAG 2.1 AA / W3C & Touch Targets >= 44px
-   Versión: 3.5 Senior Elite
+   Versión: 4.0 Senior Elite (Compresión WebP/JPEG, SHA-256,
+            Cobertura Total, Vista Previa y Restauración Selectiva)
    ═══════════════════════════════════════════════════════════ */
 
 const EsvojopAdmin = (() => {
   'use strict';
 
-  /* ── Constantes y Almacenamiento Seguro ── */
-  const ADMIN_USER = 'esvojop';
-  const ADMIN_PASS = 'esvojop2026';
+  /* ── Constantes, Seguridad y Almacenamiento ── */
+  const ADMIN_PASS_HASH = 'c7f558fec614b0fc0d9a6c39f4f2e284727fdb18de07bf677d93ebc57e4d7313';
+  const MAX_LOGIN_ATTEMPTS = 5;
+  const LOCKOUT_MS = 30000;
+  const STORAGE_QUOTA_KB = 5120; // ~5 MB estándar de localStorage
 
   const STORAGE_AUTH = 'esvojop_admin_auth';
-  const STORAGE_BLOCK_EDITS = 'esvojop_cms_blocks_v1';   // { [blockKey]: { title, badge, desc, img, btnText, btnHref } }
-  const STORAGE_CUSTOM_ITEMS = 'esvojop_cms_items_v2';   // [ { id, targetSelector, title, badge, desc, img, btnText, btnHref, date }, ... ]
-  const STORAGE_HIDDEN = 'esvojop_cms_hidden_v3';       // [ key, ... ]
+  const STORAGE_LOCKOUT = 'esvojop_admin_lockout';
+  const STORAGE_BLOCK_EDITS = 'esvojop_cms_blocks_v1';   // { [blockKey]: { title, badge, highlight, desc, img, btnText, btnHref } }
+  const STORAGE_CUSTOM_ITEMS = 'esvojop_cms_items_v2';   // [ { id, pageId, targetSelector, category, title, badge, highlight, desc, img, btnText, btnHref, date }, ... ]
+  const STORAGE_HIDDEN = 'esvojop_cms_hidden_v3';       // [ string | { key, label, pageId }, ... ]
   const STORAGE_GALLERY = 'esvojop_admin_gallery_v2';   // [ photoObj, ... ]
   const STORAGE_CARDS = 'esvojop_admin_cards_v2';       // [ cardObj, ... ]
 
+  const BLOCK_SELECTOR = [
+    '.top-bar',
+    '.hero-content',
+    '.stat-box',
+    '.trial-card',
+    '.cat-box',
+    '.met-item',
+    '.gallery-item',
+    '.extra-card',
+    '.store-card',
+    '.product-card',
+    '.team-card',
+    '.contact-card',
+    '.timeline-item',
+    '.schedule-card',
+    '.feature-card',
+    '.review-card',
+    '.guia-card',
+    '.guia-step',
+    '.phil-card',
+    '.pos-card',
+    '.cert-card',
+    '.guide-item',
+    '.step-card',
+    '.loc-card',
+    '.faq-item',
+    '.stat-card',
+    '.coach-card',
+    '.category-card',
+    '.card:not(.product-card)'
+  ].join(', ');
+
+  const NON_DELETABLE_CLASSES = ['top-bar', 'hero-content'];
+
+  const GRID_CONFIGS = [
+    { selector: '.gallery-grid', label: 'Galería', kind: 'gallery' },
+    { selector: '.product-grid', label: 'Tienda / Productos', kind: 'product' },
+    { selector: '.extra-grid', label: 'Contenido Extra', kind: 'extra' },
+    { selector: '.cat-grid-modern', label: 'Categorías', kind: 'category' },
+    { selector: '.met-grid', label: 'Metodología', kind: 'met' },
+    { selector: '.contact-grid', label: 'Contacto', kind: 'contact' },
+    { selector: '.grid-3', label: 'Tarjetas', kind: 'card' }
+  ];
+
   let _isAdmin = sessionStorage.getItem(STORAGE_AUTH) === 'true';
+  let _isPreview = false;
+  let _failedAttempts = 0;
   let _lastFocusedTrigger = null;
 
   function isAdmin() {
     return _isAdmin;
+  }
+
+  /* ── SHA-256 Puro JS (Compatible con HTTP LAN, localhost, HTTPS y file://) ── */
+  function sha256Hex(ascii) {
+    function rightRotate(value, amount) {
+      return (value >>> amount) | (value << (32 - amount));
+    }
+    const maxWord = Math.pow(2, 32);
+    let result = '';
+    const words = [];
+    const asciiBitLength = ascii.length * 8;
+
+    let hash = sha256Hex.h = sha256Hex.h || [];
+    const k = sha256Hex.k = sha256Hex.k || [];
+    let primeCounter = k.length;
+    const isComposite = {};
+
+    for (let candidate = 2; primeCounter < 64; candidate++) {
+      if (!isComposite[candidate]) {
+        for (let i = 0; i < 313; i += candidate) {
+          isComposite[i] = candidate;
+        }
+        hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
+        k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
+      }
+    }
+
+    const bytes = new TextEncoder ? Array.from(new TextEncoder().encode(ascii)) : ascii.split('').map((c) => c.charCodeAt(0));
+    bytes.push(0x80);
+    while ((bytes.length % 64) !== 56) bytes.push(0);
+
+    for (let i = 0; i < bytes.length; i++) {
+      const j = bytes[i];
+      if (j > 255) return '';
+      words[i >> 2] |= j << ((3 - i) % 4) * 8;
+    }
+    words[words.length] = (asciiBitLength / maxWord) | 0;
+    words[words.length] = asciiBitLength | 0;
+
+    const hashCopy = hash.slice(0, 8);
+    for (let j = 0; j < words.length;) {
+      const w = words.slice(j, j += 16);
+      const oldHash = hashCopy.slice(0);
+
+      for (let i = 0; i < 64; i++) {
+        const w15 = w[i - 15];
+        const w2 = w[i - 2];
+        const a = hashCopy[0];
+        const e = hashCopy[4];
+        const temp1 = hashCopy[7]
+          + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25))
+          + ((e & hashCopy[5]) ^ (~e & hashCopy[6]))
+          + k[i]
+          + (w[i] = (i < 16) ? w[i] : (
+            w[i - 16]
+            + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3))
+            + w[i - 7]
+            + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))
+          ) | 0);
+        const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22))
+          + ((a & hashCopy[1]) ^ (a & hashCopy[2]) ^ (hashCopy[1] & hashCopy[2]));
+
+        hashCopy.unshift((temp1 + temp2) | 0);
+        hashCopy[4] = (hashCopy[4] + temp1) | 0;
+        hashCopy.pop();
+      }
+      for (let i = 0; i < 8; i++) {
+        hashCopy[i] = (hashCopy[i] + oldHash[i]) | 0;
+      }
+    }
+
+    for (let i = 0; i < 8; i++) {
+      for (let j = 3; j + 1; j--) {
+        const b = (hashCopy[i] >> (j * 8)) & 255;
+        result += ((b < 16) ? '0' : '') + b.toString(16);
+      }
+    }
+    return result;
+  }
+
+  /* ── Compresión Automática de Imágenes (<canvas> Máx 1200px) ── */
+  function compressImageFile(file, maxWidth = 1200, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type.startsWith('image/')) {
+        reject(new Error('Archivo de imagen no válido'));
+        return;
+      }
+
+      // SVG se lee directo sin rasterizar
+      if (file.type === 'image/svg+xml') {
+        const svgReader = new FileReader();
+        svgReader.onload = (ev) => resolve(ev.target.result);
+        svgReader.onerror = () => reject(new Error('Error leyendo SVG'));
+        svgReader.readAsDataURL(file);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('No se pudo leer la fotografía'));
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('Formato de imagen incompatible'));
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          let out = canvas.toDataURL('image/webp', quality);
+          if (!out.startsWith('data:image/webp')) {
+            out = canvas.toDataURL('image/jpeg', quality);
+          }
+          resolve(out);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ── Cálculo de Espacio Utilizado en LocalStorage ── */
+  function getStorageUsageInfo() {
+    let totalBytes = 0;
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('esvojop_')) {
+          const v = localStorage.getItem(k) || '';
+          totalBytes += (k.length + v.length) * 2;
+        }
+      }
+    } catch {
+      totalBytes = 0;
+    }
+    const usedKB = Math.round(totalBytes / 1024);
+    const percent = Math.min(100, Math.round((usedKB / STORAGE_QUOTA_KB) * 100));
+    return { usedKB, maxKB: STORAGE_QUOTA_KB, percent };
   }
 
   /* ── Notificaciones Toast Accesibles ── */
@@ -47,7 +242,7 @@ const EsvojopAdmin = (() => {
     }
   }
 
-  /* ── Utilidades de Almacenamiento ── */
+  /* ── Utilidades Seguras de Almacenamiento ── */
   function getStored(key, fallback) {
     try {
       const data = localStorage.getItem(key);
@@ -60,9 +255,27 @@ const EsvojopAdmin = (() => {
   function setStored(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      return true;
     } catch (e) {
-      console.error('Error guardando en almacenamiento seguro:', e);
+      if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
+        notify('⚠️ Memoria llena: elimina fotos antiguas o descarga un respaldo JSON');
+      } else {
+        console.error('Error guardando en almacenamiento local:', e);
+      }
+      return false;
     }
+  }
+
+  function normalizeHiddenEntry(entry) {
+    if (typeof entry === 'string') {
+      const pageId = entry.split('::')[0] || 'index';
+      return { key: entry, label: entry, pageId };
+    }
+    return entry;
+  }
+
+  function getHiddenList() {
+    return getStored(STORAGE_HIDDEN, []).map(normalizeHiddenEntry);
   }
 
   /* ── Identificador de Página Actual ── */
@@ -84,136 +297,108 @@ const EsvojopAdmin = (() => {
       return k;
     }
 
-    // Calcular ruta de índice relativa
+    const firstCls = el.className && typeof el.className === 'string'
+      ? el.className.split(/\s+/).filter((c) => c && !c.startsWith('reveal') && !c.startsWith('admin-'))[0]
+      : '';
+    const query = el.tagName.toLowerCase() + (firstCls ? '.' + firstCls : '');
+    const allSame = document.querySelectorAll(query);
     let idx = 0;
-    const allSame = document.querySelectorAll(el.tagName.toLowerCase() + (el.className ? '.' + el.className.split(' ')[0] : ''));
     for (let i = 0; i < allSame.length; i++) {
       if (allSame[i] === el) {
         idx = i;
         break;
       }
     }
-    const k = `${pageId}::block::${el.tagName.toLowerCase()}_${idx}`;
+    const k = `${pageId}::block::${firstCls || el.tagName.toLowerCase()}_${idx}`;
     el.setAttribute('data-cms-block-id', k);
     return k;
   }
 
+  function getBlockReadableLabel(el) {
+    const t = el.querySelector('h1, h2, h3, h4, h5, .trial-title, .card-title, .overlay span, .tb-badge');
+    if (t && t.textContent.trim()) return t.textContent.trim().slice(0, 48);
+    const p = el.querySelector('p');
+    if (p && p.textContent.trim()) return p.textContent.trim().slice(0, 48);
+    return 'Bloque del sitio';
+  }
+
   /* ── Asignar Identificadores a Todos los Bloques y Tarjetas ── */
   function indexAllBlocks() {
-    const selector = [
-      'section[id]',
-      '.trial-card',
-      '.gallery-item',
-      '.extra-card',
-      '.store-card',
-      '.product-card',
-      '.team-card',
-      '.contact-card',
-      '.timeline-item',
-      '.schedule-card',
-      '.feature-card',
-      '.review-card',
-      '.guia-card',
-      '.guia-step',
-      '.faq-item',
-      '.stat-card',
-      '.coach-card',
-      '.category-card',
-      '.hero-content'
-    ].join(', ');
-
-    document.querySelectorAll(selector).forEach((el) => {
+    document.querySelectorAll(BLOCK_SELECTOR).forEach((el) => {
       getBlockKey(el);
     });
+  }
+
+  /* ── Aplicar Datos Editados a un Elemento del DOM ── */
+  function applyDataToBlockEl(el, data) {
+    const t = el.querySelector('h1, h2, h3, h4, h5, .trial-title, .stat-num, .card-title, .section-title, .ec-body h4, .overlay span');
+    if (t && data.title) t.textContent = data.title;
+
+    const b = el.querySelector('.badge, .trial-badge, .cat-box-badge, .tb-badge, .hero-tag, .ec-cat, .category, .section-tag, .subtitle, .tip');
+    if (b && data.badge) b.textContent = data.badge;
+
+    const h = el.querySelector('.price, .cat-box-age, .trial-price-tag, .stat-label');
+    if (h && data.highlight) h.textContent = data.highlight;
+
+    const d = el.querySelector('p, .lead, .card-text');
+    if (d && data.desc) d.textContent = data.desc;
+
+    const i = el.querySelector('img');
+    if (i && data.img) i.src = data.img;
+
+    const l = el.querySelector('a.btn, .btn, .top-bar a[href^="https://wa.me"]');
+    if (l && data.btnText) {
+      l.textContent = data.btnText;
+      if (data.btnHref) l.setAttribute('href', data.btnHref);
+    }
+    el.setAttribute('data-cms-edited', 'true');
   }
 
   /* ── Aplicar Cambios Persistidos en el DOM (Al Cargar la Página) ── */
   function applyPersistedChanges() {
     const pageId = getPageId();
 
-    // 1. Aplicar ediciones de bloques (títulos, descripciones, fotos, botones)
+    // 1. Renderizar primero elementos personalizados ("colocar más cosas", fotos y tarjetas)
+    renderStoredCustomItems();
+    loadStoredCustomPhotos();
+    loadStoredCustomCards();
+
+    // 2. Aplicar ediciones de bloques (incluye los bloques recién renderizados)
     const blockEdits = getStored(STORAGE_BLOCK_EDITS, {});
     Object.keys(blockEdits).forEach((key) => {
       if (key.startsWith(pageId + '::')) {
         const el = document.querySelector(`[data-cms-block-id="${key.replace(/"/g, '\\"')}"]`);
-        if (el) {
-          const data = blockEdits[key];
-          const t = el.querySelector('h1, h2, h3, h4, h5, .trial-title, .card-title, .section-title, .ec-body h4');
-          if (t && data.title) t.textContent = data.title;
-
-          const b = el.querySelector('.badge, .trial-badge, .section-tag, .ec-cat, .subtitle');
-          if (b && data.badge) b.textContent = data.badge;
-
-          const d = el.querySelector('p, .lead, .card-text');
-          if (d && data.desc) d.textContent = data.desc;
-
-          const i = el.querySelector('img');
-          if (i && data.img) i.src = data.img;
-
-          const l = el.querySelector('a.btn, .btn');
-          if (l && data.btnText) {
-            l.textContent = data.btnText;
-            if (data.btnHref) l.setAttribute('href', data.btnHref);
-          }
-          el.setAttribute('data-cms-edited', 'true');
-        }
+        if (el) applyDataToBlockEl(el, blockEdits[key]);
       }
     });
 
-    // 2. Ocultar elementos marcados como quitados
-    const hiddenList = getStored(STORAGE_HIDDEN, []);
-    hiddenList.forEach((key) => {
-      if (key.startsWith(pageId + '::')) {
-        const el = document.querySelector(`[data-cms-block-id="${key.replace(/"/g, '\\"')}"]`);
+    // 3. Ocultar elementos marcados como quitados
+    const hiddenList = getHiddenList();
+    hiddenList.forEach((entry) => {
+      if (entry.key.startsWith(pageId + '::')) {
+        const el = document.querySelector(`[data-cms-block-id="${entry.key.replace(/"/g, '\\"')}"]`);
         if (el) {
           el.style.display = 'none';
           el.setAttribute('data-cms-hidden', 'true');
         }
       }
     });
-
-    // 3. Renderizar elementos nuevos ("colocar más cosas")
-    renderStoredCustomItems();
-
-    // 4. Renderizar fotos de galería y tarjetas heredadas
-    loadStoredCustomPhotos();
-    loadStoredCustomCards();
   }
 
   /* ── Renderizar Botones Visibles de Edición [✏️ Editar] y [🗑️ Quitar] ── */
   function renderBlockToolbars() {
-    // Si no es admin, limpiar toolbars
     if (!_isAdmin) {
       document.querySelectorAll('.admin-block-toolbar, .admin-add-container').forEach((t) => t.remove());
       return;
     }
 
-    const selector = [
-      '.trial-card',
-      '.gallery-item',
-      '.extra-card',
-      '.store-card',
-      '.product-card',
-      '.team-card',
-      '.contact-card',
-      '.timeline-item',
-      '.schedule-card',
-      '.feature-card',
-      '.review-card',
-      '.guia-card',
-      '.guia-step',
-      '.faq-item',
-      '.stat-card',
-      '.coach-card',
-      '.category-card'
-    ].join(', ');
-
-    document.querySelectorAll(selector).forEach((el) => {
+    document.querySelectorAll(BLOCK_SELECTOR).forEach((el) => {
       if (el.querySelector(':scope > .admin-block-toolbar')) return;
 
       const key = getBlockKey(el);
+      const isNonDeletable = NON_DELETABLE_CLASSES.some((c) => el.classList.contains(c));
       const toolbar = document.createElement('div');
-      toolbar.className = 'admin-block-toolbar';
+      toolbar.className = isNonDeletable ? 'admin-block-toolbar admin-block-toolbar--compact' : 'admin-block-toolbar';
       toolbar.setAttribute('role', 'toolbar');
       toolbar.setAttribute('aria-label', 'Controles de administrador');
 
@@ -221,14 +406,13 @@ const EsvojopAdmin = (() => {
         <button type="button" class="admin-btn-edit" aria-label="Editar contenido de este bloque" title="Editar">
           <span aria-hidden="true">✏️</span> Editar
         </button>
+        ${isNonDeletable ? '' : `
         <button type="button" class="admin-btn-del" aria-label="Quitar este elemento del sitio" title="Quitar">
           <span aria-hidden="true">&times;</span>
-        </button>
+        </button>`}
       `;
 
-      // Posicionar en relación al elemento contenedor
-      const computedPos = window.getComputedStyle(el).position;
-      if (computedPos === 'static') {
+      if (!el.classList.contains('top-bar') && window.getComputedStyle(el).position === 'static') {
         el.style.position = 'relative';
       }
 
@@ -239,128 +423,176 @@ const EsvojopAdmin = (() => {
         openBlockEditorModal(el);
       });
 
-      toolbar.querySelector('.admin-btn-del').addEventListener('click', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        deleteBlockItem(el, key);
-      });
+      const delBtn = toolbar.querySelector('.admin-btn-del');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          deleteBlockItem(el, key);
+        });
+      }
 
       el.appendChild(toolbar);
     });
 
-    // Añadir botones de "Colocar más cosas aquí" en cuadrículas y secciones
     renderAddMoreButtons();
   }
 
-  /* ── Botones "➕ Colocar más cosas aquí" en Secciones y Cuadrículas ── */
+  /* ── Botones "➕ Colocar más cosas aquí" en Todas las Cuadrículas Reales ── */
   function renderAddMoreButtons() {
     if (!_isAdmin) return;
 
-    const gridSelectors = [
-      '.gallery-grid',
-      '.extra-grid',
-      '.store-grid',
-      '#categorias .container',
-      '#beneficios .container',
-      '.contact-grid'
-    ];
+    GRID_CONFIGS.forEach((cfg) => {
+      const containers = document.querySelectorAll(cfg.selector);
+      containers.forEach((container, idx) => {
+        const marker = `${cfg.selector}__${idx}`;
+        if (container.parentNode.querySelector(`.admin-add-container[data-for="${marker}"]`)) return;
 
-    gridSelectors.forEach((sel) => {
-      const container = document.querySelector(sel);
-      if (container && !container.parentNode.querySelector(`.admin-add-container[data-for="${sel}"]`)) {
         const wrap = document.createElement('div');
         wrap.className = 'admin-add-container';
-        wrap.setAttribute('data-for', sel);
+        wrap.setAttribute('data-for', marker);
         wrap.innerHTML = `
-          <button type="button" class="admin-btn-add-item" aria-label="Colocar más cosas en esta sección">
-            <span aria-hidden="true">➕</span> Colocar más cosas aquí
+          <button type="button" class="admin-btn-add-item" aria-label="Colocar más cosas en ${cfg.label}">
+            <span aria-hidden="true">➕</span> Colocar más en ${cfg.label}
           </button>
         `;
 
         wrap.querySelector('.admin-btn-add-item').addEventListener('click', (e) => {
           e.preventDefault();
           _lastFocusedTrigger = e.currentTarget;
-          openBlockEditorModal(null, true, sel);
+          openBlockEditorModal(null, true, cfg.selector, cfg.kind);
         });
 
-        // Insertar justo después o dentro del contenedor
         if (container.nextSibling) {
           container.parentNode.insertBefore(wrap, container.nextSibling);
         } else {
           container.parentNode.appendChild(wrap);
         }
-      }
+      });
     });
   }
 
   /* ── Modal Accesible para Editar Contenido o Colocar Más Cosas ── */
-  function openBlockEditorModal(blockEl, isNew = false, targetSelector = null) {
+  function openBlockEditorModal(blockEl, isNew = false, targetSelector = null, gridKind = 'extra') {
     let currentTitle = '';
     let currentBadge = '';
+    let currentHighlight = '';
     let currentDesc = '';
     let currentImg = '';
     let currentBtn = '';
     let currentHref = '';
+    let currentCategory = 'ropa';
+
+    let hasTitle = true;
+    let hasBadge = true;
+    let hasHighlight = isNew && (gridKind === 'product' || gridKind === 'category');
+    let hasDesc = true;
+    let hasImg = isNew || false;
+    let hasBtn = isNew && (gridKind === 'product' || gridKind === 'category');
 
     if (blockEl && !isNew) {
-      const titleEl = blockEl.querySelector('h1, h2, h3, h4, h5, .trial-title, .card-title, .section-title, .ec-body h4');
+      const titleEl = blockEl.querySelector('h1, h2, h3, h4, h5, .trial-title, .stat-num, .card-title, .section-title, .ec-body h4, .overlay span');
       if (titleEl) currentTitle = titleEl.textContent.trim();
+      else hasTitle = false;
 
-      const badgeEl = blockEl.querySelector('.badge, .trial-badge, .section-tag, .ec-cat, .subtitle');
+      const badgeEl = blockEl.querySelector('.badge, .trial-badge, .cat-box-badge, .tb-badge, .hero-tag, .ec-cat, .category, .section-tag, .subtitle, .tip');
       if (badgeEl) currentBadge = badgeEl.textContent.trim();
+      else hasBadge = false;
+
+      const highEl = blockEl.querySelector('.price, .cat-box-age, .trial-price-tag, .stat-label');
+      if (highEl) {
+        currentHighlight = highEl.textContent.trim();
+        hasHighlight = true;
+      }
 
       const descEl = blockEl.querySelector('p, .lead, .card-text');
       if (descEl) currentDesc = descEl.textContent.trim();
+      else hasDesc = false;
 
       const imgEl = blockEl.querySelector('img');
-      if (imgEl) currentImg = imgEl.src;
+      if (imgEl) {
+        currentImg = imgEl.src;
+        hasImg = true;
+      }
 
-      const linkEl = blockEl.querySelector('a.btn, .btn');
+      const linkEl = blockEl.querySelector('a.btn, .btn, .top-bar a[href^="https://wa.me"]');
       if (linkEl) {
         currentBtn = linkEl.textContent.trim();
         currentHref = linkEl.getAttribute('href') || '';
+        hasBtn = true;
       }
     }
 
-    const modalTitle = isNew ? 'Colocar <span>Más Cosas</span>' : 'Editar <span>Contenido</span>';
+    const modalTitle = isNew ? 'Colocar <span>Nuevo Elemento</span>' : 'Editar <span>Contenido</span>';
 
     const formHtml = `
       <form class="ac-form" id="blockEditorForm" role="form" aria-label="Formulario de edición de contenido">
+        ${hasTitle ? `
         <div class="ac-field">
           <label for="cms-field-title">Título o Encabezado Principal</label>
-          <input type="text" id="cms-field-title" name="title" value="${escapeHtml(currentTitle)}" placeholder="Ej: Torneo Internacional / Nueva Clase" required class="ac-input" autofocus>
-        </div>
+          <input type="text" id="cms-field-title" name="title" value="${escapeHtml(currentTitle)}" placeholder="Ej: Camiseta Oficial / Torneo Departamental" required class="ac-input" autofocus>
+        </div>` : ''}
 
+        ${hasBadge ? `
         <div class="ac-field">
-          <label for="cms-field-badge">Etiqueta, Subtítulo o Categoría (Opcional)</label>
-          <input type="text" id="cms-field-badge" name="badge" value="${escapeHtml(currentBadge)}" placeholder="Ej: Competición Oficial · 2026" class="ac-input">
-        </div>
+          <label for="cms-field-badge">Etiqueta, Subtítulo o Categoría</label>
+          <input type="text" id="cms-field-badge" name="badge" value="${escapeHtml(currentBadge)}" placeholder="Ej: Oficial ESVOJOP · 2026" class="ac-input">
+        </div>` : ''}
 
+        ${hasHighlight ? `
         <div class="ac-field">
-          <label for="cms-field-desc">Descripción, Párrafo o Información</label>
-          <textarea id="cms-field-desc" name="desc" rows="4" placeholder="Escribe el texto detallado..." class="ac-input" style="resize:vertical;">${escapeHtml(currentDesc)}</textarea>
-        </div>
+          <label for="cms-field-highlight">Precio, Edad o Dato Destacado</label>
+          <input type="text" id="cms-field-highlight" name="highlight" value="${escapeHtml(currentHighlight)}" placeholder="Ej: $85.000 COP o 12 a 16 Años" class="ac-input">
+        </div>` : ''}
 
+        ${isNew && gridKind === 'product' ? `
         <div class="ac-field">
-          <label for="cms-field-file">Fotografía o Imagen (Subir desde dispositivo o cambiar)</label>
+          <label for="cms-field-cat-filter">Filtro de Tienda</label>
+          <select id="cms-field-cat-filter" class="ac-input" style="cursor:pointer; min-height:44px;">
+            <option value="ropa">👕 Uniformes & Ropa</option>
+            <option value="balones">🏐 Balones</option>
+            <option value="calzado">👟 Calzado</option>
+            <option value="accesorios">🦵 Accesorios</option>
+          </select>
+        </div>` : ''}
+
+        ${isNew && gridKind === 'gallery' ? `
+        <div class="ac-field">
+          <label for="cms-field-cat-filter">Categoría de Galería</label>
+          <select id="cms-field-cat-filter" class="ac-input" style="cursor:pointer; min-height:44px;">
+            <option value="partidos">🏆 Partidos & Torneos</option>
+            <option value="entrenamientos">🏐 Entrenamientos IRDET</option>
+            <option value="comunidad">🤝 Comunidad & Equipo</option>
+          </select>
+        </div>` : ''}
+
+        ${hasDesc ? `
+        <div class="ac-field">
+          <label for="cms-field-desc">Descripción o Texto</label>
+          <textarea id="cms-field-desc" name="desc" rows="3" placeholder="Escribe la descripción detallada..." class="ac-input" style="resize:vertical;">${escapeHtml(currentDesc)}</textarea>
+        </div>` : ''}
+
+        ${hasImg ? `
+        <div class="ac-field">
+          <label for="cms-field-file">Fotografía (Comprimida automáticamente para ahorrar espacio)</label>
           <input type="file" id="cms-field-file" accept="image/*" class="ac-input ac-file-input">
-          <input type="text" id="cms-field-url" placeholder="O introduce una URL externa (https://...)" value="${escapeHtml(currentImg)}" class="ac-input" style="margin-top:0.4rem; font-size:0.85rem;">
+          <input type="text" id="cms-field-url" placeholder="O pega un enlace URL (https://...)" value="${escapeHtml(currentImg)}" class="ac-input" style="margin-top:0.4rem; font-size:0.85rem;">
         </div>
-
         <div class="ac-preview-box" id="cmsImgPreviewBox" style="${currentImg ? 'display:block;' : 'display:none;'} margin-top:0.3rem;">
           <img id="cmsImgPreview" src="${currentImg || ''}" alt="Vista previa de imagen">
-        </div>
+        </div>` : ''}
 
+        ${hasBtn ? `
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem;">
           <div class="ac-field">
-            <label for="cms-field-btn">Texto de Botón (Opcional)</label>
-            <input type="text" id="cms-field-btn" name="btnText" value="${escapeHtml(currentBtn)}" placeholder="Ej: Más Información" class="ac-input">
+            <label for="cms-field-btn">Texto del Botón</label>
+            <input type="text" id="cms-field-btn" name="btnText" value="${escapeHtml(currentBtn)}" placeholder="Ej: Pedir por WhatsApp" class="ac-input">
           </div>
           <div class="ac-field">
-            <label for="cms-field-href">Enlace / WhatsApp / URL</label>
-            <input type="text" id="cms-field-href" name="btnHref" value="${escapeHtml(currentHref)}" placeholder="https://wa.me/... o #seccion" class="ac-input">
+            <label for="cms-field-href">Enlace / WhatsApp</label>
+            <input type="text" id="cms-field-href" name="btnHref" value="${escapeHtml(currentHref)}" placeholder="https://wa.me/573103434293..." class="ac-input">
           </div>
-        </div>
+        </div>` : ''}
 
         <div class="ac-actions" style="margin-top:0.8rem; display:flex; gap:0.6rem;">
           <button type="submit" class="btn btn-secondary btn-shine btn-block" style="min-height:44px;">
@@ -383,49 +615,56 @@ const EsvojopAdmin = (() => {
 
     let chosenImgSrc = currentImg;
 
-    fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          chosenImgSrc = e.target.result;
+    if (fileInput) {
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        try {
+          notify('⚙️ Optimizando imagen...');
+          chosenImgSrc = await compressImageFile(file);
           previewImg.src = chosenImgSrc;
           previewBox.style.display = 'block';
-          urlInput.value = '';
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+          if (urlInput) urlInput.value = '';
+          notify('✅ Imagen optimizada lista para guardar');
+        } catch (err) {
+          alert(err.message || 'No se pudo procesar la imagen');
+        }
+      });
+    }
 
-    urlInput.addEventListener('input', () => {
-      const val = urlInput.value.trim();
-      if (val) {
-        chosenImgSrc = val;
-        previewImg.src = chosenImgSrc;
-        previewBox.style.display = 'block';
-      }
-    });
+    if (urlInput) {
+      urlInput.addEventListener('input', () => {
+        const val = urlInput.value.trim();
+        if (val) {
+          chosenImgSrc = val;
+          previewImg.src = chosenImgSrc;
+          previewBox.style.display = 'block';
+        }
+      });
+    }
 
-    cancelBtn.addEventListener('click', () => {
-      closeModalWithFocus(modal);
-    });
+    cancelBtn.addEventListener('click', () => closeModalWithFocus(modal));
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const newTitle = modal.querySelector('#cms-field-title').value.trim();
-      const newBadge = modal.querySelector('#cms-field-badge').value.trim();
-      const newDesc = modal.querySelector('#cms-field-desc').value.trim();
-      const newBtnText = modal.querySelector('#cms-field-btn').value.trim();
-      const newBtnHref = modal.querySelector('#cms-field-href').value.trim();
+      const newTitle = modal.querySelector('#cms-field-title')?.value.trim() || '';
+      const newBadge = modal.querySelector('#cms-field-badge')?.value.trim() || '';
+      const newHighlight = modal.querySelector('#cms-field-highlight')?.value.trim() || '';
+      const newDesc = modal.querySelector('#cms-field-desc')?.value.trim() || '';
+      const newBtnText = modal.querySelector('#cms-field-btn')?.value.trim() || '';
+      const newBtnHref = modal.querySelector('#cms-field-href')?.value.trim() || '';
+      const filterCat = modal.querySelector('#cms-field-cat-filter')?.value || currentCategory;
 
       if (isNew) {
-        // Crear nuevo elemento ("Colocar más cosas")
         const newItem = {
           id: 'custom_item_' + Date.now(),
           pageId: getPageId(),
           targetSelector,
+          kind: gridKind,
+          category: filterCat,
           title: newTitle,
           badge: newBadge,
+          highlight: newHighlight,
           desc: newDesc,
           img: chosenImgSrc || 'img/fotos/imagines/WhatsApp%20Image%202026-04-20%20at%204.32.25%20PM.jpeg',
           btnText: newBtnText,
@@ -435,43 +674,25 @@ const EsvojopAdmin = (() => {
 
         const list = getStored(STORAGE_CUSTOM_ITEMS, []);
         list.unshift(newItem);
-        setStored(STORAGE_CUSTOM_ITEMS, list);
+        if (!setStored(STORAGE_CUSTOM_ITEMS, list)) return;
 
         renderSingleCustomItem(newItem);
-        notify('✨ Nuevo elemento colocado y guardado en la página');
+        notify('✨ Nuevo elemento colocado y guardado');
       } else if (blockEl) {
-        // Actualizar elemento existente
-        const titleEl = blockEl.querySelector('h1, h2, h3, h4, h5, .trial-title, .card-title, .section-title, .ec-body h4');
-        if (titleEl) titleEl.textContent = newTitle;
-
-        const badgeEl = blockEl.querySelector('.badge, .trial-badge, .section-tag, .ec-cat, .subtitle');
-        if (badgeEl) badgeEl.textContent = newBadge;
-
-        const descEl = blockEl.querySelector('p, .lead, .card-text');
-        if (descEl) descEl.textContent = newDesc;
-
-        const imgEl = blockEl.querySelector('img');
-        if (imgEl && chosenImgSrc) imgEl.src = chosenImgSrc;
-
-        const linkEl = blockEl.querySelector('a.btn, .btn');
-        if (linkEl && newBtnText) {
-          linkEl.textContent = newBtnText;
-          if (newBtnHref) linkEl.setAttribute('href', newBtnHref);
-        }
-
-        // Guardar persistente
-        const key = getBlockKey(blockEl);
         const edits = getStored(STORAGE_BLOCK_EDITS, {});
+        const key = getBlockKey(blockEl);
         edits[key] = {
           title: newTitle,
           badge: newBadge,
+          highlight: newHighlight,
           desc: newDesc,
           img: chosenImgSrc,
           btnText: newBtnText,
           btnHref: newBtnHref
         };
-        setStored(STORAGE_BLOCK_EDITS, edits);
+        if (!setStored(STORAGE_BLOCK_EDITS, edits)) return;
 
+        applyDataToBlockEl(blockEl, edits[key]);
         blockEl.classList.add('cms-saved-flash');
         setTimeout(() => blockEl.classList.remove('cms-saved-flash'), 800);
         notify('💾 Cambios guardados con éxito en la página');
@@ -485,7 +706,8 @@ const EsvojopAdmin = (() => {
 
   /* ── Quitar / Ocultar Bloque Accesiblemente ── */
   function deleteBlockItem(el, key) {
-    if (confirm('🗑️ ¿Deseas quitar este elemento de la página?\n(Podrás restaurarlo en cualquier momento desde "Restaurar" en la barra de administrador sin alterar el código).')) {
+    const label = getBlockReadableLabel(el);
+    if (confirm(`🗑️ ¿Deseas quitar "${label}" de la página?\n(Puedes restaurarlo individualmente desde "Cambios" cuando quieras).`)) {
       el.style.transition = 'all 0.35s ease';
       el.style.transform = 'scale(0.85) translateY(-10px)';
       el.style.opacity = '0';
@@ -493,9 +715,9 @@ const EsvojopAdmin = (() => {
         el.style.display = 'none';
         el.setAttribute('data-cms-hidden', 'true');
 
-        const hiddenList = getStored(STORAGE_HIDDEN, []);
-        if (!hiddenList.includes(key)) {
-          hiddenList.push(key);
+        const hiddenList = getHiddenList();
+        if (!hiddenList.some((item) => item.key === key)) {
+          hiddenList.push({ key, label, pageId: getPageId() });
           setStored(STORAGE_HIDDEN, hiddenList);
         }
         notify('🗑️ Elemento quitado y guardado');
@@ -504,42 +726,100 @@ const EsvojopAdmin = (() => {
     }
   }
 
-  /* ── Renderizar Elementos Personalizados Guardados ── */
-  function renderSingleCustomItem(item) {
-    if (item.pageId !== getPageId()) return;
-
-    const targetContainer = document.querySelector(item.targetSelector);
-    if (!targetContainer) return;
-
-    if (targetContainer.querySelector(`[data-custom-item-id="${item.id}"]`)) return;
-
+  /* ── Renderizar Elementos Personalizados con Plantillas Nativas ── */
+  function buildCustomItemElement(item) {
     const el = document.createElement('div');
-    el.className = 'extra-card reveal visible custom-cms-block';
     el.setAttribute('data-custom-item-id', item.id);
     el.setAttribute('data-cms-block-id', `${getPageId()}::custom_item::${item.id}`);
 
-    el.innerHTML = `
-      <div class="ec-overlay"></div>
-      <img src="${item.img}" alt="${escapeHtml(item.title)}" class="ec-img" loading="lazy">
-      <div class="ec-body">
-        ${item.badge ? `<div class="ec-cat">${escapeHtml(item.badge)}</div>` : ''}
-        <h4>${escapeHtml(item.title)}</h4>
-        ${item.desc ? `<p style="color:var(--gray-light); font-size:0.85rem; margin-top:0.4rem;">${escapeHtml(item.desc)}</p>` : ''}
-        ${item.btnText ? `<a href="${escapeHtml(item.btnHref || '#')}" class="btn btn-secondary btn-sm" style="margin-top:0.6rem; display:inline-block;">${escapeHtml(item.btnText)}</a>` : ''}
-      </div>
-    `;
+    const safeTitle = escapeHtml(item.title);
+    const safeBadge = escapeHtml(item.badge);
+    const safeHighlight = escapeHtml(item.highlight);
+    const safeDesc = escapeHtml(item.desc);
+    const safeBtn = escapeHtml(item.btnText);
+    const safeHref = escapeHtml(item.btnHref || '#');
 
-    targetContainer.insertBefore(el, targetContainer.firstChild);
-
-    // Si está en modo admin, adjuntar controles inmediatamente
-    if (_isAdmin) {
-      renderBlockToolbars();
+    if (item.kind === 'gallery') {
+      el.className = 'gallery-item reveal-scale visible custom-cms-block';
+      el.setAttribute('data-category', item.category || 'partidos');
+      el.innerHTML = `
+        <img src="${item.img}" alt="${safeTitle}" loading="lazy">
+        <div class="overlay"><span>${safeTitle}</span></div>
+      `;
+    } else if (item.kind === 'product') {
+      el.className = 'card product-card reveal visible custom-cms-block';
+      el.setAttribute('data-category', item.category || 'ropa');
+      el.innerHTML = `
+        <div class="img-wrap">
+          <img src="${item.img}" alt="${safeTitle}" loading="lazy">
+          ${safeBadge ? `<span class="badge">${safeBadge}</span>` : ''}
+        </div>
+        <div class="info">
+          <h4>${safeTitle}</h4>
+          ${safeDesc ? `<div class="category">${safeDesc}</div>` : ''}
+          ${safeHighlight ? `<div class="price">${safeHighlight}</div>` : ''}
+          ${safeBtn ? `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="margin-top:0.75rem;display:flex;align-items:center;justify-content:center;gap:0.4rem;text-decoration:none;">${safeBtn}</a>` : ''}
+        </div>
+      `;
+    } else if (item.kind === 'category') {
+      el.className = 'cat-box reveal-scale visible custom-cms-block';
+      el.innerHTML = `
+        ${safeBadge ? `<span class="cat-box-badge">${safeBadge}</span>` : ''}
+        <div class="cat-box-img-wrap">
+          <img src="${item.img}" alt="${safeTitle}" class="cat-box-img" loading="lazy">
+        </div>
+        <div class="cat-box-body">
+          ${safeHighlight ? `<div class="cat-box-age">${safeHighlight}</div>` : ''}
+          <h3>${safeTitle}</h3>
+          ${safeDesc ? `<p style="font-size:0.85rem;color:var(--gray);line-height:1.6;">${safeDesc}</p>` : ''}
+          ${safeBtn ? `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">${safeBtn}</a>` : ''}
+        </div>
+      `;
+    } else if (item.kind === 'met') {
+      el.className = 'met-item reveal-scale visible custom-cms-block';
+      el.innerHTML = `
+        <div class="met-icon">🏐</div>
+        <h4>${safeTitle}</h4>
+        ${safeDesc ? `<p>${safeDesc}</p>` : ''}
+      `;
+    } else {
+      el.className = 'extra-card reveal visible custom-cms-block';
+      el.innerHTML = `
+        <div class="ec-overlay"></div>
+        <img src="${item.img}" alt="${safeTitle}" class="ec-img" loading="lazy">
+        <div class="ec-body">
+          ${safeBadge ? `<div class="ec-cat">${safeBadge}</div>` : ''}
+          <h4>${safeTitle}</h4>
+          ${safeDesc ? `<p style="color:var(--gray-light); font-size:0.85rem; margin-top:0.4rem;">${safeDesc}</p>` : ''}
+          ${safeBtn ? `<a href="${safeHref}" class="btn btn-secondary btn-sm" style="margin-top:0.6rem; display:inline-block;">${safeBtn}</a>` : ''}
+        </div>
+      `;
     }
+    return el;
+  }
+
+  function renderSingleCustomItem(item) {
+    if (item.pageId !== getPageId()) return;
+    const targetContainer = document.querySelector(item.targetSelector);
+    if (!targetContainer) return;
+    if (targetContainer.querySelector(`[data-custom-item-id="${item.id}"]`)) return;
+
+    const el = buildCustomItemElement(item);
+    targetContainer.insertBefore(el, targetContainer.firstChild);
+    if (_isAdmin) renderBlockToolbars();
   }
 
   function renderStoredCustomItems() {
     const list = getStored(STORAGE_CUSTOM_ITEMS, []);
     list.forEach((item) => renderSingleCustomItem(item));
+  }
+
+  /* ── Modo Vista Previa Visitante ── */
+  function togglePreviewMode(force) {
+    _isPreview = typeof force === 'boolean' ? force : !_isPreview;
+    document.body.classList.toggle('admin-preview-mode', _isPreview);
+    notify(_isPreview ? '👁️ Vista Previa: viendo la página como visitante' : '✏️ Volviste al Modo Edición');
+    updateHud();
   }
 
   /* ── Modal Base Accesible (WCAG 2.1 AA / W3C) ── */
@@ -589,9 +869,8 @@ const EsvojopAdmin = (() => {
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('active'));
 
-    // Focalizar primer elemento interactivo
     setTimeout(() => {
-      const firstInput = overlay.querySelector('input:not([type="hidden"]), textarea, button.btn-secondary');
+      const firstInput = overlay.querySelector('input:not([type="hidden"]):not([readonly]), textarea, button.btn-secondary');
       if (firstInput) firstInput.focus();
     }, 100);
 
@@ -609,7 +888,7 @@ const EsvojopAdmin = (() => {
     }, 250);
   }
 
-  /* ── Modal de Inicio de Sesión Administrador ── */
+  /* ── Modal de Inicio de Sesión Administrador con SHA-256 + Lockout ── */
   function showLoginModal() {
     const formHtml = `
       <form class="ac-form" id="adminLoginForm" role="form" aria-label="Formulario de inicio de sesión de administrador">
@@ -644,21 +923,43 @@ const EsvojopAdmin = (() => {
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const val = passInput.value.trim();
-      if (val === ADMIN_PASS) {
-        setAdmin(true);
-        closeModalWithFocus(modal);
-      } else {
-        passInput.classList.add('ac-input-error');
-        passInput.value = '';
-        passInput.focus();
-        let err = form.querySelector('.ac-error-msg');
+
+      const lockUntil = parseInt(sessionStorage.getItem(STORAGE_LOCKOUT) || '0', 10);
+      const now = Date.now();
+      let err = form.querySelector('.ac-error-msg');
+      const showError = (msg) => {
         if (!err) {
           err = document.createElement('p');
           err.className = 'ac-error-msg';
           form.insertBefore(err, form.querySelector('.ac-actions'));
         }
-        err.textContent = '❌ Contraseña incorrecta. Inténtalo nuevamente.';
+        err.textContent = msg;
+      };
+
+      if (lockUntil > now) {
+        const secs = Math.ceil((lockUntil - now) / 1000);
+        showError(`⏳ Demasiados intentos fallidos. Espera ${secs}s para reintentar.`);
+        return;
+      }
+
+      const val = passInput.value.trim();
+      if (sha256Hex(val) === ADMIN_PASS_HASH) {
+        _failedAttempts = 0;
+        sessionStorage.removeItem(STORAGE_LOCKOUT);
+        setAdmin(true);
+        closeModalWithFocus(modal);
+      } else {
+        _failedAttempts++;
+        passInput.classList.add('ac-input-error');
+        passInput.value = '';
+        passInput.focus();
+        if (_failedAttempts >= MAX_LOGIN_ATTEMPTS) {
+          sessionStorage.setItem(STORAGE_LOCKOUT, String(Date.now() + LOCKOUT_MS));
+          _failedAttempts = 0;
+          showError('🔒 Bloqueo temporal de 30s por múltiples intentos fallidos.');
+        } else {
+          showError(`❌ Contraseña incorrecta (${MAX_LOGIN_ATTEMPTS - _failedAttempts} intentos restantes).`);
+        }
       }
     });
   }
@@ -671,10 +972,9 @@ const EsvojopAdmin = (() => {
       return;
     }
 
-    const pageId = getPageId();
     const blockEdits = getStored(STORAGE_BLOCK_EDITS, {});
     const customItems = getStored(STORAGE_CUSTOM_ITEMS, []);
-    const hidden = getStored(STORAGE_HIDDEN, []);
+    const hidden = getHiddenList();
     const totalChanges = Object.keys(blockEdits).length + customItems.length + hidden.length;
 
     if (!hud) {
@@ -686,14 +986,29 @@ const EsvojopAdmin = (() => {
       document.body.appendChild(hud);
     }
 
+    if (_isPreview) {
+      hud.innerHTML = `
+        <div class="hud-left">
+          <span class="hud-logo">👁️ VISTA PREVIA VISITANTE</span>
+        </div>
+        <div class="hud-actions">
+          <button type="button" class="hud-btn admin-hud-btn-active" id="hudPreviewToggle" style="min-height:44px;">
+            ✏️ Volver a Editar
+          </button>
+        </div>
+      `;
+      hud.querySelector('#hudPreviewToggle').addEventListener('click', () => togglePreviewMode(false));
+      return;
+    }
+
     hud.innerHTML = `
       <div class="hud-left">
         <span class="hud-logo">🏐 ESVOJOP · ADMIN</span>
         <span class="hud-status"><span class="hud-pulse" aria-hidden="true"></span> Modo Edición</span>
       </div>
       <div class="hud-actions" role="toolbar" aria-label="Herramientas globales">
-        <button type="button" class="hud-btn" id="hudAddAnywhere" title="Colocar más cosas en la página">
-          <span aria-hidden="true">➕</span> Colocar Cosas
+        <button type="button" class="hud-btn" id="hudPreviewToggle" title="Ver la página exactamente como visitante">
+          <span aria-hidden="true">👁️</span> Vista Previa
         </button>
         <button type="button" class="hud-btn" id="hudAddPhoto" title="Añadir fotografía a la galería">
           <span aria-hidden="true">📸</span> + Galería
@@ -710,127 +1025,142 @@ const EsvojopAdmin = (() => {
       </div>
     `;
 
-    hud.querySelector('#hudAddAnywhere').addEventListener('click', (e) => {
-      _lastFocusedTrigger = e.currentTarget;
-      const firstGrid = document.querySelector('.gallery-grid, .extra-grid, .store-grid, .container');
-      const sel = firstGrid ? (firstGrid.className.split(' ')[0] ? '.' + firstGrid.className.split(' ')[0] : 'body') : 'body';
-      openBlockEditorModal(null, true, sel);
-    });
-
+    hud.querySelector('#hudPreviewToggle').addEventListener('click', () => togglePreviewMode(true));
     hud.querySelector('#hudAddPhoto').addEventListener('click', (e) => {
       _lastFocusedTrigger = e.currentTarget;
       openAddPhotoModal();
     });
-
     hud.querySelector('#hudChangesMgr').addEventListener('click', (e) => {
       _lastFocusedTrigger = e.currentTarget;
       openChangesManagerModal();
     });
-
     hud.querySelector('#hudBackup').addEventListener('click', () => downloadBackup());
     hud.querySelector('#hudLogout').addEventListener('click', () => setAdmin(false));
   }
 
-  /* ── Modal Gestor de Cambios y Restauración ── */
+  /* ── Modal Gestor de Cambios, Medidor de Memoria y Restauración Selectiva ── */
   function openChangesManagerModal() {
     const pageId = getPageId();
     const blockEdits = getStored(STORAGE_BLOCK_EDITS, {});
     const customItems = getStored(STORAGE_CUSTOM_ITEMS, []);
-    const hidden = getStored(STORAGE_HIDDEN, []);
+    const hidden = getHiddenList();
+    const usage = getStorageUsageInfo();
 
-    const pageEditsCount = Object.keys(blockEdits).filter((k) => k.startsWith(pageId + '::')).length;
-    const pageHiddenCount = hidden.filter((k) => k.startsWith(pageId + '::')).length;
-    const pageCustomCount = customItems.filter((i) => i.pageId === pageId).length;
+    const pageEditsKeys = Object.keys(blockEdits).filter((k) => k.startsWith(pageId + '::'));
+    const pageHiddenItems = hidden.filter((h) => h.key.startsWith(pageId + '::'));
+    const pageCustomItems = customItems.filter((i) => i.pageId === pageId);
+
+    const hiddenRowsHtml = pageHiddenItems.length > 0
+      ? pageHiddenItems.map((h) => `
+          <div class="cms-restore-row">
+            <span>🗑️ ${escapeHtml(h.label)}</span>
+            <button type="button" class="hud-btn cms-restore-one-hidden" data-key="${escapeHtml(h.key)}" style="min-height:36px; padding:0.25rem 0.7rem;">↩️ Mostrar</button>
+          </div>`).join('')
+      : '<p style="font-size:0.8rem; color:var(--gray); margin:0;">No hay elementos quitados en esta página.</p>';
+
+    const editedRowsHtml = pageEditsKeys.length > 0
+      ? pageEditsKeys.map((k) => {
+          const titleLabel = blockEdits[k]?.title || k.split('::').pop();
+          return `
+          <div class="cms-restore-row">
+            <span>✏️ ${escapeHtml(String(titleLabel).slice(0, 42))}</span>
+            <button type="button" class="hud-btn cms-restore-one-edit" data-key="${escapeHtml(k)}" style="min-height:36px; padding:0.25rem 0.7rem;">🔄 Revertir</button>
+          </div>`;
+        }).join('')
+      : '<p style="font-size:0.8rem; color:var(--gray); margin:0;">No hay textos/fotos editados en esta página.</p>';
 
     const contentHtml = `
-      <div style="display:flex; flex-direction:column; gap:1.2rem;">
-        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,215,0,0.15); border-radius:12px; padding:1rem;">
-          <h4 style="color:var(--yellow); margin:0 0 0.6rem 0; font-size:0.95rem; text-transform:uppercase; letter-spacing:0.05em;">
-            Personalizaciones en: <span style="color:#fff;">${pageId.toUpperCase()}</span>
-          </h4>
-          <ul style="list-style:none; padding:0; margin:0; font-size:0.88rem; color:var(--text-light); display:flex; flex-direction:column; gap:0.4rem;">
-            <li>✏️ <strong>${pageEditsCount}</strong> bloques modificados (textos y fotos)</li>
-            <li>🗑️ <strong>${pageHiddenCount}</strong> elementos quitados u ocultos</li>
-            <li>➕ <strong>${pageCustomCount}</strong> elementos nuevos colocados</li>
-          </ul>
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        <div class="cms-summary-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+            <span style="font-size:0.82rem; font-weight:700; color:var(--yellow);">MEMORIA DE CAMBIOS (${usage.usedKB} KB / ${usage.maxKB} KB)</span>
+            <span style="font-size:0.8rem; font-weight:700; color:#00e676;">${usage.percent}%</span>
+          </div>
+          <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+            <div style="width:${usage.percent}%; height:100%; background:${usage.percent > 80 ? '#ff5252' : 'linear-gradient(90deg, #00e676, var(--yellow))'}; transition:width 0.3s ease;"></div>
+          </div>
+          <div style="margin-top:0.7rem; font-size:0.8rem; color:var(--gray-light); display:flex; gap:0.8rem; flex-wrap:wrap;">
+            <span>✏️ ${pageEditsKeys.length} editados</span>
+            <span>🗑️ ${pageHiddenItems.length} quitados</span>
+            <span>➕ ${pageCustomItems.length} nuevos</span>
+          </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:0.6rem;">
-          <button type="button" id="btnRestoreHidden" class="hud-btn" style="width:100%; justify-content:center; padding:0.7rem; min-height:44px;">
-            ↩️ Restaurar Elementos Quitados (${pageHiddenCount})
-          </button>
-          <button type="button" id="btnRestoreEdits" class="hud-btn" style="width:100%; justify-content:center; padding:0.7rem; min-height:44px;">
-            🔄 Restaurar Textos y Fotos Originales (${pageEditsCount})
-          </button>
-          <button type="button" id="btnResetAll" class="hud-btn hud-btn-danger" style="width:100%; justify-content:center; padding:0.7rem; margin-top:0.4rem; min-height:44px;">
-            ⚠️ Restablecer Todo el Sitio a Fábrica
-          </button>
+        <div class="cms-restore-section">
+          <h4 style="font-size:0.82rem; text-transform:uppercase; color:var(--yellow); margin:0 0 0.5rem 0;">Elementos Quitados (Restaurar Uno por Uno)</h4>
+          <div class="cms-restore-list">${hiddenRowsHtml}</div>
         </div>
 
-        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:0.4rem 0;">
+        <div class="cms-restore-section">
+          <h4 style="font-size:0.82rem; text-transform:uppercase; color:var(--yellow); margin:0 0 0.5rem 0;">Bloques Editados en ${pageId.toUpperCase()}</h4>
+          <div class="cms-restore-list">${editedRowsHtml}</div>
+        </div>
 
-        <div style="display:flex; gap:0.6rem;">
-          <button type="button" id="btnExportJSON" class="btn btn-secondary btn-block" style="font-size:0.8rem; padding:0.65rem; min-height:44px;">
-            💾 Descargar Respaldo JSON
+        <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+          <button type="button" id="btnExportJSON" class="btn btn-secondary btn-block" style="flex:1; font-size:0.8rem; padding:0.65rem; min-height:44px;">
+            💾 Respaldo JSON
           </button>
-          <label class="btn btn-primary btn-block" style="font-size:0.8rem; padding:0.65rem; min-height:44px; text-align:center; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-            📥 Importar Respaldo
+          <label class="btn btn-primary btn-block" style="flex:1; font-size:0.8rem; padding:0.65rem; min-height:44px; text-align:center; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            📥 Importar JSON
             <input type="file" id="btnImportJSON" accept=".json" style="display:none;">
           </label>
         </div>
+
+        <button type="button" id="btnResetAll" class="hud-btn hud-btn-danger" style="width:100%; justify-content:center; padding:0.65rem; min-height:44px;">
+          ⚠️ Restablecer Todo el Sitio a Fábrica
+        </button>
       </div>
     `;
 
-    const modal = createModal('Centro de <span>Restauración & Cambios</span>', contentHtml);
+    const modal = createModal('Centro de <span>Cambios & Memoria</span>', contentHtml);
 
-    // Restaurar quitados
-    modal.querySelector('#btnRestoreHidden').addEventListener('click', () => {
-      const remainingHidden = hidden.filter((k) => !k.startsWith(pageId + '::'));
-      setStored(STORAGE_HIDDEN, remainingHidden);
-      document.querySelectorAll(`[data-cms-block-id*="${pageId}::"]`).forEach((el) => {
-        el.style.display = '';
-        el.removeAttribute('data-cms-hidden');
-        el.style.opacity = '1';
-        el.style.transform = 'none';
+    // Restaurar individualmente un elemento quitado
+    modal.querySelectorAll('.cms-restore-one-hidden').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-key');
+        const remaining = getHiddenList().filter((h) => h.key !== key);
+        setStored(STORAGE_HIDDEN, remaining);
+        const el = document.querySelector(`[data-cms-block-id="${key.replace(/"/g, '\\"')}"]`);
+        if (el) {
+          el.style.display = '';
+          el.removeAttribute('data-cms-hidden');
+          el.style.opacity = '1';
+          el.style.transform = 'none';
+        }
+        notify('↩️ Elemento restaurado');
+        closeModalWithFocus(modal);
+        updateHud();
+        renderBlockToolbars();
       });
-      notify('↩️ Elementos quitados restaurados exitosamente');
-      closeModalWithFocus(modal);
-      updateHud();
-      renderBlockToolbars();
     });
 
-    // Restaurar ediciones de esta página
-    modal.querySelector('#btnRestoreEdits').addEventListener('click', () => {
-      if (confirm('¿Deseas restaurar todos los textos y fotos modificados en esta página a los originales del sitio?')) {
-        const remainingEdits = {};
-        Object.keys(blockEdits).forEach((k) => {
-          if (!k.startsWith(pageId + '::')) remainingEdits[k] = blockEdits[k];
-        });
-        setStored(STORAGE_BLOCK_EDITS, remainingEdits);
-        notify('🔄 Contenido restaurado. Actualizando página...');
-        setTimeout(() => window.location.reload(), 600);
-      }
+    // Revertir individualmente un bloque editado
+    modal.querySelectorAll('.cms-restore-one-edit').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-key');
+        const edits = getStored(STORAGE_BLOCK_EDITS, {});
+        delete edits[key];
+        setStored(STORAGE_BLOCK_EDITS, edits);
+        notify('🔄 Cambio revertido. Actualizando vista...');
+        setTimeout(() => window.location.reload(), 500);
+      });
     });
 
     // Reset total
     modal.querySelector('#btnResetAll').addEventListener('click', () => {
-      if (confirm('⚠️ ¿Estás completamente seguro de borrar todas las modificaciones, elementos colocados y fotos agregadas?\n\nEsta acción restablece el sitio al código original de fábrica.')) {
+      if (confirm('⚠️ ¿Estás seguro de borrar todas las modificaciones, elementos colocados y fotos agregadas?\n\nEsto devuelve el sitio al estado original de fábrica.')) {
         localStorage.removeItem(STORAGE_BLOCK_EDITS);
         localStorage.removeItem(STORAGE_CUSTOM_ITEMS);
         localStorage.removeItem(STORAGE_HIDDEN);
         localStorage.removeItem(STORAGE_GALLERY);
         localStorage.removeItem(STORAGE_CARDS);
         notify('♻️ Sitio restablecido a su estado de fábrica');
-        setTimeout(() => window.location.reload(), 800);
+        setTimeout(() => window.location.reload(), 700);
       }
     });
 
-    // Exportar JSON
-    modal.querySelector('#btnExportJSON').addEventListener('click', () => {
-      downloadBackup();
-    });
+    modal.querySelector('#btnExportJSON').addEventListener('click', () => downloadBackup());
 
-    // Importar JSON
     modal.querySelector('#btnImportJSON').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -843,8 +1173,8 @@ const EsvojopAdmin = (() => {
             if (data.hidden) setStored(STORAGE_HIDDEN, data.hidden);
             if (data.photos) setStored(STORAGE_GALLERY, data.photos);
             if (data.cards) setStored(STORAGE_CARDS, data.cards);
-            notify('📥 Respaldo importado exitosamente. Recargando sitio...');
-            setTimeout(() => window.location.reload(), 800);
+            notify('📥 Respaldo importado. Recargando sitio...');
+            setTimeout(() => window.location.reload(), 700);
           } catch {
             alert('❌ Archivo de respaldo no válido.');
           }
@@ -861,7 +1191,7 @@ const EsvojopAdmin = (() => {
       exportDate: new Date().toISOString(),
       blockEdits: getStored(STORAGE_BLOCK_EDITS, {}),
       customItems: getStored(STORAGE_CUSTOM_ITEMS, []),
-      hidden: getStored(STORAGE_HIDDEN, []),
+      hidden: getHiddenList(),
       photos: getStored(STORAGE_GALLERY, []),
       cards: getStored(STORAGE_CARDS, [])
     };
@@ -876,7 +1206,7 @@ const EsvojopAdmin = (() => {
     notify('💾 Copia de respaldo descargada');
   }
 
-  /* ── Modal de Añadir Fotografía a Galería ── */
+  /* ── Modal de Añadir Fotografía a Galería con Compresión ── */
   function openAddPhotoModal() {
     const formHtml = `
       <form class="ac-form" id="addPhotoForm" role="form" aria-label="Añadir foto a galería">
@@ -893,7 +1223,7 @@ const EsvojopAdmin = (() => {
           </select>
         </div>
         <div class="ac-field">
-          <label for="photo-file">Seleccionar Fotografía desde tu Dispositivo</label>
+          <label for="photo-file">Seleccionar Fotografía (Se optimiza automáticamente)</label>
           <input type="file" id="photo-file" accept="image/*" required class="ac-input ac-file-input">
         </div>
         <div class="ac-preview-box" id="photoPreviewBox" style="display:none;">
@@ -913,18 +1243,19 @@ const EsvojopAdmin = (() => {
     const previewBox = modal.querySelector('#photoPreviewBox');
     const previewImg = modal.querySelector('#photoPreviewImg');
 
-    let base64Url = '';
+    let compressedUrl = '';
 
-    fileInput.addEventListener('change', () => {
+    fileInput.addEventListener('change', async () => {
       const file = fileInput.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          base64Url = ev.target.result;
-          previewImg.src = base64Url;
-          previewBox.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
+      if (!file) return;
+      try {
+        notify('⚙️ Comprimiendo fotografía...');
+        compressedUrl = await compressImageFile(file);
+        previewImg.src = compressedUrl;
+        previewBox.style.display = 'block';
+        notify('✅ Fotografía lista y optimizada');
+      } catch (err) {
+        alert(err.message || 'No se pudo procesar la fotografía');
       }
     });
 
@@ -933,7 +1264,7 @@ const EsvojopAdmin = (() => {
       const title = modal.querySelector('#photo-title').value.trim();
       const category = modal.querySelector('#photo-cat').value;
 
-      if (!base64Url) {
+      if (!compressedUrl) {
         alert('Por favor selecciona una imagen válida.');
         return;
       }
@@ -942,13 +1273,13 @@ const EsvojopAdmin = (() => {
         id: 'photo_' + Date.now(),
         title,
         category,
-        src: base64Url,
+        src: compressedUrl,
         date: new Date().toLocaleDateString('es-CO')
       };
 
       const list = getStored(STORAGE_GALLERY, []);
       list.unshift(photoItem);
-      setStored(STORAGE_GALLERY, list);
+      if (!setStored(STORAGE_GALLERY, list)) return;
 
       renderCustomPhotoInDOM(photoItem);
       notify('📸 Fotografía guardada y publicada en la galería');
@@ -961,7 +1292,6 @@ const EsvojopAdmin = (() => {
   function renderCustomPhotoInDOM(photo) {
     const galleryGrid = document.querySelector('.gallery-grid');
     if (!galleryGrid) return;
-
     if (galleryGrid.querySelector(`[data-custom-id="${photo.id}"]`)) return;
 
     const item = document.createElement('div');
@@ -1014,6 +1344,9 @@ const EsvojopAdmin = (() => {
   /* ── Autenticación y Estado ── */
   function setAdmin(state) {
     _isAdmin = state;
+    _isPreview = false;
+    document.body.classList.remove('admin-preview-mode');
+
     if (state) {
       sessionStorage.setItem(STORAGE_AUTH, 'true');
       document.body.classList.add('admin-mode');
@@ -1093,6 +1426,7 @@ const EsvojopAdmin = (() => {
     isAdmin,
     login: showLoginModal,
     logout: () => setAdmin(false),
+    togglePreview: togglePreviewMode,
     openEditor: openBlockEditorModal,
     openManager: openChangesManagerModal,
     addPhoto: openAddPhotoModal,

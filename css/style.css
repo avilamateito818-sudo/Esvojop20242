@@ -2959,10 +2959,12 @@ body.admin-mode .admin-toggle {
   border: 1px solid rgba(0, 168, 255, 0.3);
   border-radius: 16px;
   padding: 2.2rem 2rem;
+  max-height: 90vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 168, 255, 0.18);
   transform: translateY(20px) scale(0.96);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
 }
 
 .ac-modal.active .ac-modal-box {
@@ -3594,4 +3596,73 @@ body.admin-editing-texts [data-cms-editable]:focus {
     padding: 0.75rem 1.2rem;
     font-size: 0.85rem;
   }
+}
+
+/* ── Vista Previa Visitante & Barra Superior Compacta ── */
+body.admin-preview-mode .admin-block-toolbar,
+body.admin-preview-mode .admin-add-container {
+  display: none !important;
+}
+
+.top-bar .admin-block-toolbar--compact {
+  position: static;
+  margin-left: 0.5rem;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+.top-bar .admin-block-toolbar--compact .admin-btn-edit {
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  min-height: 36px;
+}
+
+.hero-content .admin-block-toolbar--compact {
+  top: -14px;
+  right: 0;
+}
+
+/* ── Centro de Cambios, Medidor de Memoria y Restauración Selectiva ── */
+.cms-summary-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+}
+
+.cms-restore-section {
+  background: rgba(6, 13, 26, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 0.8rem 0.9rem;
+}
+
+.cms-restore-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.cms-restore-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.cms-restore-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@supports (max-height: 90dvh) {
+  .ac-modal-box { max-height: 90dvh; }
 }
